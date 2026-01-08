@@ -1,80 +1,32 @@
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ABIDE</title>
+  <style>
+    body { background-color: #111; color: #eee; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; display: flex; justify-content: center; min-height: 100vh; }
+    .container { width: 100%; max-width: 400px; background: #111; padding: 20px; box-sizing: border-box; padding-bottom: 80px; }
+    @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
+    .recording { animation: pulse 1.5s infinite; background: #c00 !important; border: 1px solid #f00 !important; }
+  </style>
 </head>
-
-<style>
-  body {
-    background-color: #111;
-    /* Yumuşak Siyah (Premium) */
-    color: #eee;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    min-height: 100vh;
-  }
-
-  .container {
-    width: 100%;
-    max-width: 400px;
-    /* Telefon boyutu simülasyonu */
-    background: #111;
-    padding: 20px;
-    box-sizing: border-box;
-    padding-bottom: 80px;
-    /* Reklam payı */
-  }
-
-  /* Mikrofon animasyonu */
-  @keyframes pulse {
-    0% {
-      transform: scale(1);
-      box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
-    }
-
-    70% {
-      transform: scale(1.1);
-      box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
-    }
-
-    100% {
-      transform: scale(1);
-      box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
-    }
-  }
-
-  .recording {
-    animation: pulse 1.5s infinite;
-    background: #c00 !important;
-    border: 1px solid #f00 !important;
-  }
-</style>
+<body>
 <div style="max-width:680px; margin:0 auto; padding:28px;">
   <h1 style="margin:0 0 10px 0;">ABIDE</h1>
   <p style="margin:0 0 22px 0; opacity:0.85;" id="subtitle">Gizli. Yargısız. Sakin.</p>
 
-  <!-- EKLENDİ: Dil + Mezhep seçimi -->
   <div style="padding:16px; border:1px solid #333; border-radius:12px; margin-bottom:18px;">
     <div style="margin-bottom:8px; opacity:0.9;" id="setupTitle">Başlangıç</div>
-
     <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">
-      <label style="opacity:0.85;" id="langLabel">Dil:</label>
-      <select id="lang" onchange="applyLang()"
-        style="padding:8px 10px; border-radius:10px; border:1px solid #444; background:#0b0b0b; color:#fff;">
+      <label id="langLabel">Dil:</label>
+      <select id="lang" onchange="applyLang()" style="padding:8px 10px; border-radius:10px; border:1px solid #444; background:#0b0b0b; color:#fff;">
         <option value="tr" selected>Türkçe</option>
         <option value="ru">Русский</option>
         <option value="en">English</option>
       </select>
-
-      <label style="opacity:0.85;" id="relLabel">Din:</label>
-      <select id="religion" onchange="applyReligion()"
-        style="padding:8px 10px; border-radius:10px; border:1px solid #444; background:#0b0b0b; color:#fff;">
+      <label id="relLabel">Din:</label>
+      <select id="religion" onchange="applyReligion()" style="padding:8px 10px; border-radius:10px; border:1px solid #444; background:#0b0b0b; color:#fff;">
         <option value="islam">İslam</option>
         <option value="christianity">Hristiyanlık</option>
         <option value="judaism">Yahudilik</option>
@@ -82,699 +34,107 @@
         <option value="spiritual">Spiritüel / Deist</option>
       </select>
     </div>
-
     <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px; align-items:center;" id="denomContainer">
-      <label style="opacity:0.85; min-width:80px;" id="denomLabel">Mezhep/Yol:</label>
-      <select id="denom" onchange="applyDenom()"
-        style="flex:1; min-width:150px; padding:8px 10px; border-radius:10px; border:1px solid #444; background:#0b0b0b; color:#fff;">
-        <!-- Dinamik dolacak -->
-      </select>
+      <label id="denomLabel">Mezhep/Yol:</label>
+      <select id="denom" onchange="applyDenom()" style="flex:1; min-width:150px; padding:8px 10px; border-radius:10px; border:1px solid #444; background:#0b0b0b; color:#fff;"></select>
     </div>
-
     <div style="margin-bottom:12px;">
-      <span style="opacity:0.7; margin-right:10px;" id="genderLabel">Cinsiyet:</span>
-      <select id="gender" onchange="applyGender()"
-        style="padding:8px 10px; border-radius:10px; border:1px solid #444; background:#0b0b0b; color:#fff;">
+      <span id="genderLabel">Cinsiyet:</span>
+      <select id="gender" onchange="applyGender()" style="padding:8px 10px; border-radius:10px; border:1px solid #444; background:#0b0b0b; color:#fff;">
         <option value="male" selected>Erkek</option>
         <option value="female">Kadın</option>
       </select>
     </div>
-
-    <div id="setupHint" style="opacity:0.7; font-size:12px; margin-bottom:12px;">
-      Bu seçimler seni sınıflandırmaz; yalnızca ton ve metin dilini ayarlar.
-    </div>
-
-
     <!-- PREMIUM ALANI -->
     <div style="border-top:1px solid #444; margin-top:12px; padding-top:12px; text-align:center;">
-      <button onclick="buyPremium()" id="btnPremium"
-        style="background:linear-gradient(45deg, #FFD700, #FFA500); color:#000; border:none; padding:10px 20px; border-radius:20px; font-weight:bold; cursor:pointer; width:100%;">
-        👑 Reklamları Kaldır (30 TL)
-      </button>
-      <div id="premiumStatus" style="font-size:12px; color:#4CAF50; display:none; margin-top:5px;">
-        ✓ Premium Üye (Reklamlar Gizlendi)
-      </div>
+      <button onclick="buyPremium()" id="btnPremium" style="background:linear-gradient(45deg, #FFD700, #FFA500); color:#000; border:none; padding:10px 20px; border-radius:20px; font-weight:bold; cursor:pointer; width:100%;">👑 Reklamları Kaldır (30 TL)</button>
+      <div id="premiumStatus" style="font-size:12px; color:#4CAF50; display:none; margin-top:5px;">✓ Premium Üye</div>
     </div>
   </div>
-  <!-- /EKLENDİ -->
-
-  <!-- ESKİ SES PLAYERLARI KALDIRILDI -->
 
   <div style="padding:16px; border:1px solid #333; border-radius:12px; margin-bottom:18px;">
     <div style="margin-bottom:8px; opacity:0.9;" id="feelTitle">Nasıl hissediyorsun?</div>
-
     <div style="display:flex; flex-wrap:wrap; gap:10px;">
-      <button onclick="triggerAI('tired')"
-        style="padding:10px 14px; border-radius:10px; border:1px solid #444; background:#111; color:#fff; cursor:pointer;"
-        id="btnTired">Yorgun</button>
-      <button onclick="triggerAI('fear')"
-        style="padding:10px 14px; border-radius:10px; border:1px solid #444; background:#111; color:#fff; cursor:pointer;"
-        id="btnFear">Korkmuş</button>
-      <button onclick="triggerAI('lonely')"
-        style="padding:10px 14px; border-radius:10px; border:1px solid #444; background:#111; color:#fff; cursor:pointer;"
-        id="btnAlone">Yalnız</button>
-      <button onclick="triggerAI('guilt')"
-        style="padding:10px 14px; border-radius:10px; border:1px solid #444; background:#111; color:#fff; cursor:pointer;"
-        id="btnGuilt">Suçluluk</button>
-    </div>
-
-    <div style="margin-top:10px; opacity:0.7; font-size:12px;" id="feelNote">
-      <!-- Not metni i18n'den gelecek -->
+      <button onclick="triggerAI('tired')" style="padding:10px 14px; border-radius:10px; border:1px solid #444; background:#111; color:#fff; cursor:pointer;" id="btnTired">Yorgun</button>
+      <button onclick="triggerAI('fear')" style="padding:10px 14px; border-radius:10px; border:1px solid #444; background:#111; color:#fff; cursor:pointer;" id="btnFear">Korkmuş</button>
+      <button onclick="triggerAI('lonely')" style="padding:10px 14px; border-radius:10px; border:1px solid #444; background:#111; color:#fff; cursor:pointer;" id="btnAlone">Yalnız</button>
+      <button onclick="triggerAI('guilt')" style="padding:10px 14px; border-radius:10px; border:1px solid #444; background:#111; color:#fff; cursor:pointer;" id="btnGuilt">Suçluluk</button>
     </div>
   </div>
 
   <div style="padding:16px; border:1px solid #333; border-radius:12px; margin-bottom:18px;">
     <div style="margin-bottom:8px; opacity:0.9;" id="replyTitle">ABIDE yanıtı</div>
-    <div id="responseBox"
-      style="padding:12px; border-radius:10px; border:1px solid #444; background:#0b0b0b; min-height:48px; opacity:0.95;">
-      Buraya yazdıklarından bir duygu seçilecek ve uygun teselli sesi çalacak.
-    </div>
-
-    <!-- REKLAM DUVARI (LİMİT DOLUNCA ÇIKAR) -->
-    <div id="adWall"
-      style="display:none; flex-direction:column; align-items:center; justify-content:center; margin-top:10px; padding:15px; background:#220; border:1px solid #dd0; border-radius:10px;">
+    <div id="responseBox" style="padding:12px; border-radius:10px; border:1px solid #444; background:#0b0b0b; min-height:48px; opacity:0.95;">Yanıt bekliyor...</div>
+    <div id="adWall" style="display:none; flex-direction:column; align-items:center; justify-content:center; margin-top:10px; padding:15px; background:#220; border:1px solid #dd0; border-radius:10px;">
       <div style="font-size:14px; color:#fff; margin-bottom:10px;">🔒 Günlük Limit Doldu</div>
-      <button id="btnWatchAd" onclick="watchAd()"
-        style="background:#f44336; color:white; padding:10px 20px; border:none; border-radius:20px; font-weight:bold; cursor:pointer; margin-top:8px;">
-        📺 Reklamı İzle (+3 Hak)
-      </button>
+      <button id="btnWatchAd" onclick="watchAd()" style="background:#f44336; color:white; padding:10px 20px; border:none; border-radius:20px; font-weight:bold; cursor:pointer;">📺 Reklamı İzle (+3 Hak)</button>
     </div>
   </div>
 
   <div style="padding:16px; border:1px solid #333; border-radius:12px; margin-bottom:18px;">
-    <div style="margin-bottom:8px; opacity:0.9;" id="writeTitle">İstersen yaz (kaydedilmez)</div>
+    <div style="margin-bottom:8px; opacity:0.9;" id="writeTitle">İstersen yaz</div>
     <div style="position:relative; display:flex; gap:8px; align-items:flex-end;">
-      <textarea id="note" rows="2" placeholder="Buraya yazabilirsin..."
-        style="flex:1; width:100%; padding:12px; border-radius:12px; border:1px solid #444; background:#1a1a1a; color:#fff; font-family:inherit; resize:none;"></textarea>
-
-      <button id="btnMic" onclick="toggleRecord()"
-        style="width:44px; height:44px; border-radius:50%; border:1px solid #444; background:#222; color:#fff; cursor:pointer; font-size:20px; display:flex; align-items:center; justify-content:center;">
-        🎤
-      </button>
+      <textarea id="note" rows="2" placeholder="Buraya yazabilirsin..." style="flex:1; width:100%; padding:12px; border-radius:12px; border:1px solid #444; background:#1a1a1a; color:#fff; font-family:inherit; resize:none;"></textarea>
+      <button id="btnMic" onclick="toggleRecord()" style="width:44px; height:44px; border-radius:50%; border:1px solid #444; background:#222; color:#fff; cursor:pointer; font-size:20px; display:flex; align-items:center; justify-content:center;">🎤</button>
     </div>
-
     <div style="display:flex; justify-content:space-between; margin-top:10px;">
-      <button onclick="submitText()"
-        style="padding:10px 24px; border-radius:20px; border:none; background:#eee; color:#000; font-weight:bold; cursor:pointer;"
-        id="btnSend">Gönder</button>
-      <button onclick="clearText()"
-        style="padding:10px 16px; border-radius:20px; border:1px solid #555; background:transparent; color:#aaa; cursor:pointer;"
-        id="btnClear">Sil</button>
+      <button onclick="submitText()" style="padding:10px 24px; border-radius:20px; border:none; background:#eee; color:#000; font-weight:bold; cursor:pointer;" id="btnSend">Gönder</button>
+      <button onclick="clearNote()" style="padding:10px 16px; border-radius:20px; border:1px solid #555; background:transparent; color:#aaa; cursor:pointer;" id="btnClear">Sil</button>
     </div>
   </div>
-
-  <p style="margin-top:18px; font-size:12px; opacity:0.65;" id="disclaimer">
-    ABIDE bir dinî kurum değildir. Bu içerikler kişisel rahatlama ve tefekkür amaçlıdır.
-  </p>
-
-  <!-- REKLAM ALANI (Sabit Alt Banner) -->
-  <div id="adBanner"
-    style="position:fixed; bottom:0; left:0; width:100%; height:60px; background:#222; border-top:1px solid #444; display:flex; align-items:center; justify-content:center; z-index:999;">
-    <div style="color:#888; font-size:12px;">Google Ads Alanı (Reklamlar Burada Görünecek)</div>
-    <!-- Gerçekte buraya AdSense/AdMob kodu gelir -->
-  </div>
-  <div style="height:70px;"></div> <!-- Alt boşluk -->
+  <p style="margin-top:18px; font-size:12px; opacity:0.65;" id="disclaimer">ABIDE bir dinî kurum değildir.</p>
 </div>
 
 <script>
-  // --- AYARLAR VE SABİTLER ---
   const EMBEDDED_KEY = "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";
-
-  var state = {
-    lang: "tr",
-    religion: "islam",
-    denom: "sunni",
-    gender: "male",
-    premium: false,
-    dailyCount: 0,
-    lastVisit: new Date().toDateString()
-  };
-
-  // Din ve Mezhep Veritabanı
-  const RELIGIONS = {
-    islam: {
-      label: { tr: "İslam", ru: "Ислам", en: "Islam" },
-      denoms: {
-        sunni: { tr: "Sünni", ru: "Суннизм", en: "Sunni" },
-        shia: { tr: "Şii", ru: "Шиизм", en: "Shia" },
-        sufi: { tr: "Tasavvuf / Sufi", ru: "Суфизм", en: "Sufi" },
-        general: { tr: "Mezhep yok / Farketmez", ru: "Без мазхаба", en: "No Denom" }
-      }
-    },
-    christianity: {
-      label: { tr: "Hristiyanlık", ru: "Христианство", en: "Christianity" },
-      denoms: {
-        orthodox: { tr: "Ortodoks", ru: "Православие", en: "Orthodox" },
-        catholic: { tr: "Katolik", ru: "Католицизм", en: "Catholic" },
-        protestant: { tr: "Protestan", ru: "Протестантизм", en: "Protestant" }
-      }
-    },
-    judaism: {
-      label: { tr: "Yahudilik", ru: "Иудаизм", en: "Judaism" },
-      denoms: {
-        orthodox: { tr: "Ortodoks", ru: "Ортодоксальный", en: "Orthodox" },
-        reform: { tr: "Reformist", ru: "Реформистский", en: "Reform" },
-        kabbalah: { tr: "Kabbala", ru: "Каббала", en: "Kabbalah" }
-      }
-    },
-    buddhism: {
-      label: { tr: "Budizm", ru: "Буддизм", en: "Buddhism" },
-      denoms: {
-        zen: { tr: "Zen", ru: "Дзен", en: "Zen" },
-        tibetan: { tr: "Tibet", ru: "Тибетский", en: "Tibetan" }
-      }
-    },
-    spiritual: {
-      label: { tr: "Sadece Yaratıcı / Deist", ru: "Духовность", en: "Spiritual/Creator" },
-      denoms: null // Alt seçenek yok
-    }
-  };
-
-  // Sohbet Hafızası (AI'nın önceki konuşmaları hatırlaması için)
+  var state = { lang: "tr", religion: "islam", denom: "sunni", gender: "male", premium: false, dailyCount: 0, lastVisit: new Date().toDateString() };
   var chatHistory = [];
+  const RELIGIONS = { islam: { label: { tr: "İslam", ru: "Ислам", en: "Islam" }, denoms: { sunni: { tr: "Sünni", ru: "Суннизм", en: "Sunni" }, shia: { tr: "Şii", ru: "Шиизм", en: "Shia" }, sufi: { tr: "Tasavvuf", ru: "Суфизм", en: "Sufi" }, general: { tr: "Fark etmez", ru: "Без мазхаба", en: "No Denom" } } }, christianity: { label: { tr: "Hristiyanlık", ru: "Христианство", en: "Christianity" }, denoms: { orthodox: { tr: "Ortodoks", ru: "Православие", en: "Orthodox" }, catholic: { tr: "Katolik", ru: "Католицизм", en: "Catholic" }, protestant: { tr: "Protestan", ru: "Протестантизм", en: "Protestant" } } } };
+  var I18N = { tr: { subtitle: "Gizli. Yargısız. Sakin.", setupTitle: "Başlangıç", langLabel: "Dil:", relLabel: "Din:", denomLabel: "Mezhep/Yol:", genderLabel: "Cinsiyet:", feelTitle: "Nasıl hissediyorsun?", btnTired: "Yorgun", btnFear: "Korkmuş", btnAlone: "Yalnız", btnGuilt: "Suçluluk", replyTitle: "ABIDE yanıtı", writeTitle: "İstersen yaz", placeholder: "Buraya yazabilirsin...", btnSend: "Gönder", btnClear: "Sil", disclaimer: "ABIDE bir dinî kurum değildir.", msgCleared: "Metin silindi.", msgNoText: "Bir şey yazmadın." } };
 
-  // Metinler
-  var I18N = {
-    tr: {
-      subtitle: "Gizli. Yargısız. Sakin.",
-      setupTitle: "Başlangıç",
-      langLabel: "Dil:",
-      relLabel: "Din:",
-      denomLabel: "Mezhep/Yol:",
-      genderLabel: "Cinsiyet:",
-      setupHint: "Bu seçimler Abide'nin sana nasıl hitap edeceğini belirler.",
-      welcomeTitle: "Karşılama",
-      verseTitle: "Teselli Ayeti (Örnek)",
-      feelTitle: "Nasıl hissediyorsun?",
-      btnTired: "Yorgun",
-      btnFear: "Korkmuş",
-      btnAlone: "Yalnız",
-      btnGuilt: "Suçluluk",
-      feelNote: "Rahat hissetmen ve teselli bulman dileğiyle.",
-      replyTitle: "ABIDE yanıtı",
-      responseDefault: "Buraya yazdıklarından bir duygu seçilecek ve uygun teselli sesi çalacak.",
-      writeTitle: "İstersen yaz (kaydedilmez)",
-      placeholder: "Buraya yazabilirsin...",
-      btnSend: "Gönder",
-      btnClear: "Sil",
-      saveNote: "Not: Bu sayfa kaydetmez; tarayıcıyı kapatınca unut.",
-      disclaimer: "ABIDE bir dinî kurum değildir. Bu içerikler kişisel rahatlama ve tefekkür amaçlıdır.",
-      msgCleared: "Metin silindi. İstersen yeniden yazabilirsin.",
-      msgNoText: "Bir şey yazmadın. İstersen birkaç cümle yaz ve Gönder'e bas.",
-      msgPlaying: (tag) => "Seçilen duygu: " + tag + ". Şimdi kısa bir teselli dinle.",
-      msgAuto: (tag) => "Seni anlıyorum. Şu an '" + tag + "' hissi baskın görünüyor. Birlikte kısa bir teselli dinleyelim."
-    },
-    ru: {
-      subtitle: "Тайно. Без осуждения. Спокойно.",
-      setupTitle: "Старт",
-      langLabel: "Язык:",
-      relLabel: "Религия:",
-      denomLabel: "Традиция:",
-      genderLabel: "Пол:",
-      setupHint: "Эти выборы не классифицируют тебя; они лишь настраивают язык и тон.",
-      welcomeTitle: "Приветствие",
-      verseTitle: "Утешение (пример)",
-      feelTitle: "Что ты чувствуешь?",
-      btnTired: "Усталость",
-      btnFear: "Страх",
-      btnAlone: "Одиночество",
-      btnGuilt: "Вина",
-      feelNote: "Пусть это принесет тебе мир и утешение.",
-      replyTitle: "Ответ ABIDE",
-      responseDefault: "ABIDE выберет чувство по твоему тексту и проиграет короткое утешение.",
-      writeTitle: "Можешь написать (не сохраняется)",
-      placeholder: "Напиши здесь...",
-      btnSend: "Отправить",
-      btnClear: "Очистить",
-      saveNote: "Примечание: страница ничего не сохраняет.",
-      disclaimer: "ABIDE не является религиозным учреждением. Контент предназначен для личного успокоения и размышления.",
-      msgCleared: "Текст очищен. Можешь написать заново.",
-      msgNoText: "Ты ничего не написал. Напиши пару фраз и нажми «Отправить».",
-      msgPlaying: (tag) => "Выбрано чувство: " + tag + ". Давай послушаем короткое утешение.",
-      msgAuto: (tag) => "Я понимаю. Похоже, сейчас преобладает '" + tag + "'. Давай послушаем короткое утешение."
-    },
-    en: {
-      subtitle: "Private. Judgment-free. Calm.",
-      setupTitle: "Start",
-      langLabel: "Language:",
-      relLabel: "Religion:",
-      denomLabel: "Denom/Path:",
-      genderLabel: "Gender:",
-      setupHint: "These choices do not classify you; they only set language and tone.",
-      welcomeTitle: "Welcome",
-      verseTitle: "Comfort (sample)",
-      feelTitle: "How do you feel?",
-      btnTired: "Tired",
-      btnFear: "Fear",
-      btnAlone: "Lonely",
-      btnGuilt: "Guilt",
-      feelNote: "Note: Some specific audios are missing for English, playing general comfort instead.",
-      replyTitle: "ABIDE reply",
-      responseDefault: "ABIDE will pick a feeling from your text and play a short comfort.",
-      writeTitle: "Write if you want (not saved)",
-      placeholder: "Write here...",
-      btnSend: "Send",
-      btnClear: "Clear",
-      saveNote: "Note: this page saves nothing.",
-      disclaimer: "ABIDE is not a religious institution. This content is for personal comfort and reflection.",
-      msgCleared: "Text cleared. You can write again.",
-      msgNoText: "You wrote nothing. Write a few lines and press Send.",
-      msgPlaying: (tag) => "Selected feeling: " + tag + ". Now listen to a short comfort.",
-      msgAuto: (tag) => "I hear you. It seems '" + tag + "' is dominant right now. Let's listen to a short comfort."
-    }
-  };
+  function applyLang() { state.lang = document.getElementById('lang').value; renderI18n(); updateReligionsUI(); }
+  function updateReligionsUI() { var rData = RELIGIONS[state.religion]; var dSelect = document.getElementById("denom"); dSelect.innerHTML = ""; if (rData && rData.denoms) { document.getElementById("denomContainer").style.display = "flex"; for (var key in rData.denoms) { var opt = document.createElement("option"); opt.value = key; opt.textContent = rData.denoms[key][state.lang]; dSelect.appendChild(opt); } } else { document.getElementById("denomContainer").style.display = "none"; } }
+  function applyReligion() { state.religion = document.getElementById("religion").value; updateReligionsUI(); }
+  function applyDenom() { state.denom = document.getElementById('denom').value; }
+  function applyGender() { state.gender = document.getElementById('gender').value; }
+  function renderI18n() { var t = I18N[state.lang]; document.getElementById('subtitle').textContent = t.subtitle; document.getElementById('setupTitle').textContent = t.setupTitle; document.getElementById('langLabel').textContent = t.langLabel; document.getElementById('relLabel').textContent = t.relLabel; document.getElementById('denomLabel').textContent = t.denomLabel; document.getElementById('genderLabel').textContent = t.genderLabel; document.getElementById('feelTitle').textContent = t.feelTitle; document.getElementById('btnTired').textContent = t.btnTired; document.getElementById('btnFear').textContent = t.btnFear; document.getElementById('btnAlone').textContent = t.btnAlone; document.getElementById('btnGuilt').textContent = t.btnGuilt; document.getElementById('replyTitle').textContent = t.replyTitle; document.getElementById('writeTitle').textContent = t.writeTitle; document.getElementById('btnSend').textContent = t.btnSend; document.getElementById('btnClear').textContent = t.btnClear; document.getElementById('disclaimer').textContent = t.disclaimer; document.getElementById('note').placeholder = t.placeholder; }
+  function setResponse(msg) { document.getElementById('responseBox').textContent = msg; }
+  function clearNote() { document.getElementById('note').value = ''; setResponse(I18N[state.lang].msgCleared); }
 
-  // --- ESKİ SES FONKSİYONLARI SİLİNDİ ---
-
-  function applyLang() {
-    state.lang = document.getElementById('lang').value;
-    renderI18n();
-    renderI18n();
-    updateReligionsUI();
-  }
-
-  // Arayüzdeki Din/Mezhep listesini güncelleme
-  function updateReligionsUI() {
-    // 1. Din Listesini Doldur (Sadece etiketleri güncelle)
-    // Basitlik için statik HTML kullandık ama etiketleri JS ile güncelleyebiliriz.
-    // Şimdilik sadece Mezhep listesini yeniden oluşturacağız.
-
-    var rel = state.religion;
-    var rData = RELIGIONS[rel];
-    var dSelect = document.getElementById("denom");
-
-    dSelect.innerHTML = ""; // Temizle
-
-    if (rData && rData.denoms) {
-      document.getElementById("denomContainer").style.display = "flex";
-      // Seçenekleri ekle
-      for (var key in rData.denoms) {
-        var opt = document.createElement("option");
-        opt.value = key;
-        opt.textContent = rData.denoms[key][state.lang];
-        if (key === state.denom) opt.selected = true;
-        dSelect.appendChild(opt);
-      }
-      // Eğer mevcut seçim listede yoksa ilkini seç
-      if (!rData.denoms[state.denom]) {
-        state.denom = Object.keys(rData.denoms)[0];
-        dSelect.value = state.denom;
-      }
-    } else {
-      // Alt mezhep yoksa gizle
-      document.getElementById("denomContainer").style.display = "none";
-      state.denom = "general";
-    }
-  }
-
-  function applyReligion() {
-    state.religion = document.getElementById("religion").value;
-    updateReligionsUI();
-    setResponse("Din güncellendi. Mezhep seçenekleri değişti.");
-    chatHistory = [];
-  }
-
-  function applyDenom() {
-    state.denom = document.getElementById('denom').value;
-    setResponse("Mezhep ayarlandı.");
-    chatHistory = []; // Yeni ayar, yeni sayfa
-  }
-
-  function applyGender() {
-    state.gender = document.getElementById('gender').value;
-    setResponse("Cinsiyet ayarlandı. Sohbet hafızası temizlendi.");
-    chatHistory = [];
-  }
-
-  function renderI18n() {
-    var t = I18N[state.lang];
-    document.getElementById('subtitle').textContent = t.subtitle;
-    document.getElementById('setupTitle').textContent = t.setupTitle;
-    document.getElementById('langLabel').textContent = t.langLabel;
-    if (document.getElementById('relLabel')) document.getElementById('relLabel').textContent = t.relLabel || "Din:";
-    document.getElementById('denomLabel').textContent = t.denomLabel;
-    if (document.getElementById('genderLabel')) document.getElementById('genderLabel').textContent = t.genderLabel || "Cinsiyet:";
-    document.getElementById('setupHint').textContent = t.setupHint;
-    // document.getElementById('welcomeTitle').textContent = t.welcomeTitle; // Silindi
-    // document.getElementById('verseTitle').textContent = t.verseTitle;   // Silindi
-    document.getElementById('feelTitle').textContent = t.feelTitle;
-    document.getElementById('btnTired').textContent = t.btnTired;
-    document.getElementById('btnFear').textContent = t.btnFear;
-    document.getElementById('btnAlone').textContent = t.btnAlone;
-    document.getElementById('btnGuilt').textContent = t.btnGuilt;
-    document.getElementById('feelNote').textContent = t.feelNote;
-    document.getElementById('replyTitle').textContent = t.replyTitle;
-    document.getElementById('writeTitle').textContent = t.writeTitle;
-    document.getElementById('btnSend').textContent = t.btnSend;
-    document.getElementById('btnClear').textContent = t.btnClear;
-    document.getElementById('saveNote').textContent = t.saveNote;
-    document.getElementById('disclaimer').textContent = t.disclaimer;
-    document.getElementById('note').placeholder = t.placeholder;
-  }
-
-  function setResponse(msg) {
-    document.getElementById('responseBox').textContent = msg;
-  }
-
-  function clearNote() {
-    document.getElementById('note').value = '';
-    setResponse(I18N[state.lang].msgCleared);
-  }
-
-  // Butonlara basılınca MP3 DEĞİL, direkt AI çalışsın
   async function triggerAI(tag) {
-    // Tag'e göre bir metin uyduralım
-    var map = {
-      'tired': { tr: "Kendimi çok yorgun ve bitkin hissediyorum. Ruhum daraldı.", ru: "Я так устал.", en: "I feel very tired." },
-      'fear': { tr: "İçimde bir korku ve endişe var. Huzursuzum.", ru: "Мне страшно.", en: "I feel fear." },
-      'lonely': { tr: "Kendimi çok yalnız ve kimsesiz hissediyorum.", ru: "Мне одиноко.", en: "I feel lonely." },
-      'guilt': { tr: "Vicdan azabı çekiyorum, suçluluk hissediyorum.", ru: "Я чувствую вину.", en: "I feel guilt." }
-    };
-
-    var userText = map[tag][state.lang];
-    document.getElementById('note').value = userText; // Kutuya yaz
-
-    setResponse("Abide düşünüyor... (" + tag + ")");
-    // AI Çağır
-    var aiResponse = await callHuggingFaceAI(userText, tag);
-    if (aiResponse) {
-      setResponse(aiResponse);
-      speakResponse(aiResponse);
-    }
+    var userText = tag === 'tired' ? 'Çok yorgunum.' : 'Kendimi huzursuz hissediyorum.';
+    setResponse("Abide düşünüyor...");
+    var resp = await callHuggingFaceAI(userText);
+    if (resp) { setResponse(resp); speakResponse(resp); }
   }
 
-  // Basit anahtar kelime yakalama (v1) -> STANDART ETIKETLER DONER
-  function detectTag(text) {
-    var t = (text || "").toLowerCase();
+  function checkDailyLimit() { if (state.premium) return true; if (state.dailyCount >= 3) { document.getElementById("adWall").style.display = "flex"; return false; } return true; }
+  function incrementUsage() { state.dailyCount++; }
+  function watchAd() { setTimeout(() => { alert("Hak verildi!"); state.dailyCount = 0; document.getElementById("adWall").style.display = "none"; }, 2000); }
 
-    // Türkçe
-    if (state.lang === "tr") {
-      if (t.includes("bunald") || t.includes("yapamıyor") || t.includes("baş edem") || t.includes("dayanam") || t.includes("yoruld")) return "tired";
-      if (t.includes("kork") || t.includes("endiş") || t.includes("panik")) return "fear";
-      if (t.includes("yalnız") || t.includes("kimsem yok") || t.includes("terk")) return "lonely";
-      if (t.includes("suç") || t.includes("pişman") || t.includes("utanç") || t.includes("günah")) return "guilt";
-      if (t.includes("ilişki") || t.includes("çocuk") || t.includes("babal") || t.includes("hamile") || t.includes("doğurdu")) return "tired";
-      return "tired"; // Varsayılan
-    }
-
-    // Rusça
-    if (state.lang === "ru") {
-      if (t.includes("устал") || t.includes("не могу") || t.includes("тяжело") || t.includes("выгорел")) return "tired";
-      if (t.includes("страх") || t.includes("боюс") || t.includes("тревог") || t.includes("паник")) return "fear";
-      if (t.includes("один") || t.includes("одино") || t.includes("никого нет")) return "lonely";
-      if (t.includes("вина") || t.includes("стыд") || t.includes("грех")) return "guilt";
-      return "tired";
-    }
-
-    // İngilizce
-    if (t.includes("tired") || t.includes("can't") || t.includes("exhaust")) return "tired";
-    if (t.includes("fear") || t.includes("anx") || t.includes("panic")) return "fear";
-    if (t.includes("alone") || t.includes("lonely")) return "lonely";
-    if (t.includes("guilt") || t.includes("shame") || t.includes("sin")) return "guilt";
-    return "tired";
-  }
-
-  function loadApiKey() {
-    // Premium kontrolü
-    var isPrem = localStorage.getItem("abide_premium");
-    if (isPrem === "true") {
-      state.premium = true;
-      updatePremiumUI();
-    }
-  }
-
-  function buyPremium() {
-    // BURAYA SHOPIER LINKI GELECEK
-    var confirmBuy = confirm("Reklamları kaldırmak için 30 TL ödeme sayfasına yönlendiriliyorsunuz. (Simülasyon: Tamam derseniz satın alınmış sayılacak)");
-    if (confirmBuy) {
-      localStorage.setItem("abide_premium", "true");
-      state.premium = true;
-      updatePremiumUI();
-      alert("Teşekkürler! Premium özellikler açıldı.");
-    }
-  }
-
-  function updatePremiumUI() {
-    if (state.premium) {
-      document.getElementById('adBanner').style.display = 'none'; // Reklamı gizle
-      document.getElementById('btnPremium').style.display = 'none'; // Butonu gizle
-      document.getElementById('premiumStatus').style.display = 'block'; // Statüyü göster
-    }
-  }
-
-  // --- SESLİ GİRİŞ (Speech-to-Text) ---
-  var recognition;
-  var isRecording = false;
-
-  // Sayfa yüklenince (veya ilk ihtiyaçta) recognition nesnesini hazırla
-  function setupRecognition() {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      if (document.getElementById("btnMic")) document.getElementById("btnMic").style.display = "none";
-      return null;
-    }
-    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    var rec = new SpeechRecognition();
-
-    // SÜREKLİ DİNLEME: Kullanıcı dur diyene kadar kapanmaz
-    rec.continuous = true;
-    rec.interimResults = false; // TEKRARI ÖNLEMEK İÇİN: Sadece kesinleşince yazsın
-
-    rec.onstart = function () {
-      isRecording = true;
-      document.getElementById("btnMic").classList.add("recording");
-    };
-
-    // Otomatik kapanırsa (sessizlik vs) ve biz durdurmadıysak
-    rec.onend = function () {
-      // Eğer kullanıcı butona basıp durdurmadıysa, tarayıcı kendi kapattı demektir.
-      // Tekrar başlatmak yerine kullanıcıya bırakıyoruz (Sürekli izin istemesin diye).
-      isRecording = false;
-      document.getElementById("btnMic").classList.remove("recording");
-    };
-
-    rec.onresult = function (event) {
-      // Sadece en son gelen sonucu alalım
-      var lastIndex = event.results.length - 1;
-      var transcript = event.results[lastIndex][0].transcript;
-
-      // Boş değilse ekle
-      if (transcript) {
-        var note = document.getElementById("note");
-        // Önceki metin varsa boşluk bırakıp ekle
-        note.value = note.value ? (note.value.trim() + " " + transcript) : transcript;
-      }
-    };
-
-    rec.onerror = function (event) {
-      console.error("Speech error", event.error);
-      // Hata olunca dur
-      isRecording = false;
-      if (document.getElementById("btnMic")) document.getElementById("btnMic").classList.remove("recording");
-    };
-
-    return rec;
-  }
-
-  function toggleRecord() {
-    if (!recognition) {
-      recognition = setupRecognition();
-      if (!recognition) return;
-    }
-
-    if (isRecording) {
-      recognition.stop();
-      isRecording = false; // Manuel durdurma
-    } else {
-      // Dili ayarla
-      var langMap = { 'tr': 'tr-TR', 'en': 'en-US', 'ru': 'ru-RU' };
-      recognition.lang = langMap[state.lang] || 'tr-TR';
-      recognition.start();
-    }
-  }
-
-  // İlk kurulum
-  setTimeout(function () {
-    recognition = setupRecognition();
-  }, 1000);
-
-
-
-  function checkDailyLimit() {
-    if (state.premium) return true;
-    var today = new Date().toDateString();
-    if (state.lastVisit !== today) {
-      state.dailyCount = 0;
-      state.lastVisit = today;
-      localStorage.setItem("abide_last_visit", today);
-      localStorage.setItem("abide_daily_count", "0");
-    }
-    if (state.dailyCount >= 3) {
-      showLimitWarning();
-      return false;
-    }
-    return true;
-  }
-
-  function incrementUsage() {
-    if (state.premium) return;
-    state.dailyCount++;
-    localStorage.setItem("abide_daily_count", state.dailyCount);
-  }
-
-  function showLimitWarning() {
-    var txt = {
-      tr: "Bugünkü 3 ücretsiz soru hakkın doldu. Devam etmek için kısa bir reklam izlemelisin.",
-      ru: "Ваши 3 бесплатных вопроса на сегодня исчерпаны. Посмотрите рекламу, чтобы продолжить.",
-      en: "You used your 3 free questions for today. Watch an ad to continue."
-    };
-    setResponse(txt[state.lang]);
-    document.getElementById("adWall").style.display = "flex";
-  }
-
-  function watchAd() {
-    var btn = document.getElementById("btnWatchAd");
-    btn.innerHTML = "Reklam Yükleniyor...";
-    btn.disabled = true;
-    setTimeout(function () {
-      alert("Teşekkürler! +3 Soru Hakkı Kazandın.");
-      state.dailyCount = 0;
-      localStorage.setItem("abide_daily_count", "0");
-      document.getElementById("adWall").style.display = "none";
-      btn.innerHTML = "📺 Reklamı İzle (+3 Hak)";
-      btn.disabled = false;
-      setResponse("Harika! Kaldığımız yerden devam edelim. Dinliyorum...");
-    }, 2000);
-  }
-
-  async function callHuggingFaceAI(userText, detectedTag) {
+  async function callHuggingFaceAI(userText) {
     if (!checkDailyLimit()) return null;
-
-    var apiKey = EMBEDDED_KEY || localStorage.getItem("abide_api_key");
-    if (!apiKey || apiKey.trim() === "") {
-      setResponse("Üzgünüm, şu an bağlantıda bir sorun oldu. Lütfen tekrar deneyin.");
-      return null;
-    }
-    apiKey = apiKey.trim();
-
-    // Hugging Face Router API (v1)
+    var apiKey = EMBEDDED_KEY;
     var apiUrl = "https://router.huggingface.co/v1/chat/completions";
-    var modelName = "Qwen/Qwen2.5-7B-Instruct"; // Çok zeki ve özel izin gerektirmez
-
-    // Profil Hazırlığı
-    var langName = state.lang === "tr" ? "Türkçe" : (state.lang === "ru" ? "Rusça" : "İngilizce");
-    var genderName = state.gender === "male" ? "Erkek" : "Kadın";
-    var rData = RELIGIONS[state.religion];
-    var rLabel = rData.label[state.lang];
-    var dLabel = (rData.denoms && rData.denoms[state.denom]) ? rData.denoms[state.denom][state.lang] : "";
-    var fullFaith = rLabel + (dLabel ? " (" + dLabel + ")" : "");
-    var hitap = (state.lang === "tr") ? (state.gender === "male" ? "Beyefendi/Oğlum/Kardeşim" : "Hanımefendi/Kızım/Kardeşim") : (state.lang === "ru" ? (state.gender === "male" ? "Господин/Sın/Brat" : "Gospoga/Doch/Sestra") : (state.gender === "male" ? "Sir/Son/Brother" : "Madam/Daughter/Sister"));
-
-    var systemInstruction = `Sen 'Abide' adında, bilge, şefkatli ve derin konuşan bir manevi rehbersin.
-      KULLANICI PROFİLİ: Cinsiyet: ${genderName} (${hitap}), İnanç: ${fullFaith}, Dil: ${langName}.
-      KURALLAR: 1. Yapay zeka gibi konuşma. 2. Cevaplar kısa olsun. 3. İnanca uygun terminoloji kullan. 4. Cevabı sadece ${langName} dilinde ver.`;
-
-    var messages = [
-      { role: "system", content: systemInstruction },
-      ...chatHistory,
-      { role: "user", content: userText }
-    ];
-
+    var systemInstruction = `Sen Abide'sin. Bilge bir rehbersin.`;
     try {
-      setResponse("Abide düşünüyor...");
       var response = await fetch(apiUrl, {
         method: "POST",
-        headers: {
-          "Authorization": "Bearer " + apiKey,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: modelName,
-          messages: messages,
-          max_tokens: 500,
-          temperature: 0.7
-        })
+        headers: { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "Qwen/Qwen2.5-7B-Instruct", messages: [{role:"system", content:systemInstruction}, {role:"user", content:userText}], max_tokens: 500 })
       });
-
-      if (!response.ok) {
-        var errText = await response.text();
-        throw new Error("API Hatası: " + errText);
-      }
-
       var data = await response.json();
-
-      if (data && data.choices && data.choices.length > 0) {
-        incrementUsage();
-        var aiText = data.choices[0].message.content;
-
-        // HAFIZAYA KAYDET
-        chatHistory.push({ role: "user", content: userText });
-        chatHistory.push({ role: "assistant", content: aiText });
-        if (chatHistory.length > 6) chatHistory = chatHistory.slice(-6);
-
-        return aiText;
-      } else {
-        throw new Error("Boş cevap döndü.");
-      }
-
-    } catch (error) {
-      console.error("AI Hatası:", error);
-      return "⚠️ HATA: " + error.message;
-    }
-  }
-  // --- TTS (Seslendirme) İŞLEMLERİ ---
-  function speakResponse(text) {
-    if (!window.speechSynthesis) return;
-
-    // Varsa eskisini sustur
-    window.speechSynthesis.cancel();
-
-    // HTML taglerini ve markdown işaretlerini temizle
-    var cleanText = text.replace(/<[^>]*>/g, "").replace(/\*/g, "");
-
-    var u = new SpeechSynthesisUtterance(cleanText);
-    // Dili state'den al
-    var langMap = { "tr": "tr-TR", "ru": "ru-RU", "en": "en-US" };
-    u.lang = langMap[state.lang] || "tr-TR";
-
-    u.rate = 0.9; // Biraz yavaş ve sakin
-    u.pitch = 1.0;
-
-    window.speechSynthesis.speak(u);
-  }
-  // --- /AI ve TTS İŞLEMLERİ ---
-
-  async function submitText() {
-    var text = document.getElementById('note').value.trim();
-    if (!text) {
-      setResponse(I18N[state.lang].msgNoText);
-      return;
-    }
-
-    var tag = detectTag(text);
-
-    // var p = document.getElementById('versePlayer');
-    // var file = pickVerseFile(tag);
-    // setAudioSource(p, file);
-    // try { p.currentTime = 0; } catch (e) { }
-    // p.play();
-
-    setResponse("Abide düşünüyor...");
-
-    // Hugging Face fonksiyonunu çağır
-    var aiResponse = await callHuggingFaceAI(text, tag);
-    if (aiResponse) {
-      setResponse(aiResponse);
-      speakResponse(aiResponse);
-    }
+      if (data.choices) { incrementUsage(); return data.choices[0].message.content; }
+      return "Bir hata oluştu.";
+    } catch (e) { return "Bağlantı sorunu."; }
   }
 
-  // İlk yükleme
-  loadApiKey();
+  function speakResponse(text) { if (!window.speechSynthesis) return; window.speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(text); u.lang = state.lang === 'tr' ? 'tr-TR' : 'en-US'; window.speechSynthesis.speak(u); }
+
+  async function submitText() { var text = document.getElementById('note').value.trim(); if (!text) return; setResponse("Abide düşünüyor..."); var resp = await callHuggingFaceAI(text); if (resp) { setResponse(resp); speakResponse(resp); } }
+
   renderI18n();
-  updateReligionsUI(); // Mezhep listesini doldur
-  // syncAudioToLang(); // Silindi
-  setResponse(I18N[state.lang].responseDefault);
+  updateReligionsUI();
 </script>
 </body>
-
-</html>```
+</html>
