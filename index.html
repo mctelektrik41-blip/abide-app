@@ -139,6 +139,10 @@
       style="padding:12px; border-radius:10px; border:1px solid #444; background:#0b0b0b; min-height:48px; opacity:0.95;">
       Yanıt bekliyor...
     </div>
+    <button id="btnSpeakAgain" onclick="manualSpeak()"
+      style="display:none; margin-top:8px; background:transparent; border:1px solid #555; color:#eee; padding:5px 12px; border-radius:15px; font-size:12px; cursor:pointer;">
+      🔊 Sesli Dinle
+    </button>
 
     <!-- REKLAM DUVARI -->
     <div id="adWall"
@@ -369,14 +373,28 @@
     document.getElementById('note').placeholder = t.placeholder;
   }
 
-  function setResponse(msg) { document.getElementById('responseBox').textContent = msg; }
+  function setResponse(msg) {
+    document.getElementById('responseBox').textContent = msg;
+    if (msg && msg !== "Abide düşünüyor..." && msg !== "Yanıt bekliyor...") {
+      document.getElementById('btnSpeakAgain').style.display = "inline-block";
+    } else {
+      document.getElementById('btnSpeakAgain').style.display = "none";
+    }
+  }
   function clearText() { document.getElementById('note').value = ''; setResponse(I18N[state.lang].msgCleared); }
 
   async function triggerAI(tag) {
-    var maps = { tired: 'Çok yorgunum.', fear: 'Korkuyorum.', lonely: 'Yalnızım.', guilt: 'Suçlu hissediyorum.' };
-    var userText = maps[tag];
+    unlockAudio(); // Mobil ses motorunu uyandır
+    var maps = {
+      'tired': { tr: "Çok yorgunum.", ru: "Я устал.", en: "I am tired." },
+      'fear': { tr: "Korkuyorum.", ru: "Мне страшно.", en: "I am scared." },
+      'lonely': { tr: "Yalnızım.", ru: "Я один.", en: "I am alone." },
+      'guilt': { tr: "Suçlu hissediyorum.", ru: "Я виноваt.", en: "I feel guilty." }
+    };
+    var userText = maps[tag][state.lang];
+    document.getElementById('note').value = userText;
     setResponse("Abide düşünüyor...");
-    var aiResponse = await callHuggingFaceAI(userText);
+    var aiResponse = await callHuggingFaceAI(userText, tag);
     if (aiResponse) { setResponse(aiResponse); speakResponse(aiResponse); }
   }
 
@@ -401,7 +419,7 @@
     }, 2000);
   }
 
-  async function callHuggingFaceAI(userText) {
+  async function callHuggingFaceAI(userText, tag) {
     if (!checkDailyLimit()) return null;
     var apiKey = EMBEDDED_KEY;
     var apiUrl = "https://router.huggingface.co/v1/chat/completions";
@@ -416,9 +434,40 @@
     } catch (e) { return "Bağlantı sorunu."; }
   }
 
-  function speakResponse(text) { if (!window.speechSynthesis) return; window.speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(text.replace(/<[^>]*>/g, "")); u.lang = state.lang === 'tr' ? 'tr-TR' : 'en-US'; window.speechSynthesis.speak(u); }
+  function speakResponse(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.resume(); // Safari/Chrome resume bug fix
+    var cleanText = text.replace(/<[^>]*>/g, "").replace(/\*/g, "");
+    var u = new SpeechSynthesisUtterance(cleanText);
+    var langMap = { "tr": "tr-TR", "ru": "ru-RU", "en": "en-US" };
+    u.lang = langMap[state.lang] || "tr-TR";
+    u.rate = 0.9;
+    window.speechSynthesis.speak(u);
+  }
 
-  async function submitText() { var t = document.getElementById('note').value.trim(); if (!t) return; setResponse("Abide düşünüyor..."); var res = await callHuggingFaceAI(t); if (res) { setResponse(res); speakResponse(res); } }
+  function manualSpeak() {
+    var txt = document.getElementById('responseBox').textContent;
+    if (txt) speakResponse(txt);
+  }
+
+  function unlockAudio() {
+    // Mobil tarayıcılar için sessiz bir tetikleme yaparak motoru uyandırırız
+    if (!window.speechSynthesis) return;
+    var u = new SpeechSynthesisUtterance('');
+    u.volume = 0;
+    window.speechSynthesis.speak(u);
+    window.speechSynthesis.resume();
+  }
+
+  async function submitText() {
+    unlockAudio(); // Mobil ses motorunu uyandır
+    var text = document.getElementById('note').value.trim();
+    if (!text) { setResponse(I18N[state.lang].msgNoText); return; }
+    setResponse("Abide düşünüyor...");
+    var aiResponse = await callHuggingFaceAI(text);
+    if (aiResponse) { setResponse(aiResponse); speakResponse(aiResponse); }
+  }
 
   function buyPremium() { if (confirm("Premium (30 TL) satın al?")) { state.premium = true; localStorage.setItem("abide_premium", "true"); updatePremiumUI(); } }
   function updatePremiumUI() { if (state.premium) { document.getElementById('adBanner').style.display = 'none'; document.getElementById('btnPremium').style.display = 'none'; document.getElementById('premiumStatus').style.display = 'block'; } }
@@ -456,6 +505,7 @@
     };
   }
   function toggleRecord() {
+    unlockAudio(); // Mobil ses motorunu uyandır
     if (location.protocol === 'file:') {
       alert("UYARI: Yerel dosya (file://) üzerinden mikrofon çalışmaz. Lütfen GitHub Pages (HTTPS) üzerinden deneyin.");
     }
