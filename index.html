@@ -53,8 +53,14 @@
 </style>
 
 <div style="max-width:680px; margin:0 auto; padding:28px;">
-  <h1 style="margin:0 0 10px 0;">ABIDE</h1>
-  <p style="margin:0 0 22px 0; opacity:0.85;" id="subtitle">Gizli. Yargısız. Sakin.</p>
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <h1 style="margin:0;">ABIDE</h1>
+    <button id="toggleAudioBtn" onclick="toggleAudioInit()"
+      style="background:#222; border:1px solid #444; color:#fff; padding:6px 12px; border-radius:15px; font-size:12px; cursor:pointer;">
+      🔊 Ses Kapalı
+    </button>
+  </div>
+  <p style="margin:5px 0 22px 0; opacity:0.85;" id="subtitle">Gizli. Yargısız. Sakin.</p>
 
   <!-- BAŞLANGIÇ AYARLARI -->
   <div style="padding:16px; border:1px solid #333; border-radius:12px; margin-bottom:18px;">
@@ -198,8 +204,10 @@
   const _k3 = "StBLMSpjRlkF";
   const _k4 = "LhmAxrjnHo";
   const EMBEDDED_KEY = _k1 + _k2 + _k3 + _k4;
+  const APP_VERSION = "1.0.4"; // Önbellek kontrolü için
 
   var state = {
+    audioEnabled: false,
     lang: "tr",
     religion: "islam",
     denom: "sunni",
@@ -435,33 +443,59 @@
   }
 
   function speakResponse(text) {
-    if (!window.speechSynthesis) return;
+    if (!window.speechSynthesis || !state.audioEnabled) return;
     window.speechSynthesis.cancel();
-    window.speechSynthesis.resume(); // Safari/Chrome resume bug fix
-    var cleanText = text.replace(/<[^>]*>/g, "").replace(/\*/g, "");
-    var u = new SpeechSynthesisUtterance(cleanText);
-    var langMap = { "tr": "tr-TR", "ru": "ru-RU", "en": "en-US" };
-    u.lang = langMap[state.lang] || "tr-TR";
-    u.rate = 0.9;
-    window.speechSynthesis.speak(u);
+
+    // Mobil Safari için ekstra 'resume' ve boş ses tetiklemesi
+    var silent = new SpeechSynthesisUtterance('');
+    window.speechSynthesis.speak(silent);
+
+    setTimeout(() => {
+      var cleanText = text.replace(/<[^>]*>/g, "").replace(/\*/g, "");
+      var u = new SpeechSynthesisUtterance(cleanText);
+      var langMap = { "tr": "tr-TR", "ru": "ru-RU", "en": "en-US" };
+      u.lang = langMap[state.lang] || "tr-TR";
+      u.rate = 0.9;
+      window.speechSynthesis.speak(u);
+    }, 50);
   }
 
   function manualSpeak() {
+    state.audioEnabled = true;
+    updateAudioBtn();
     var txt = document.getElementById('responseBox').textContent;
     if (txt) speakResponse(txt);
   }
 
+  function toggleAudioInit() {
+    state.audioEnabled = !state.audioEnabled;
+    if (state.audioEnabled) {
+      unlockAudio();
+    }
+    updateAudioBtn();
+  }
+
+  function updateAudioBtn() {
+    var btn = document.getElementById("toggleAudioBtn");
+    btn.innerHTML = state.audioEnabled ? "🔊 Ses Açık" : "🔇 Ses Kapalı";
+    btn.style.borderColor = state.audioEnabled ? "#4CAF50" : "#444";
+  }
+
   function unlockAudio() {
-    // Mobil tarayıcılar için sessiz bir tetikleme yaparak motoru uyandırırız
     if (!window.speechSynthesis) return;
-    var u = new SpeechSynthesisUtterance('');
+    state.audioEnabled = true;
+    var u = new SpeechSynthesisUtterance('Se'); // Çok kısa bir ses
     u.volume = 0;
     window.speechSynthesis.speak(u);
     window.speechSynthesis.resume();
+    updateAudioBtn();
   }
 
   async function submitText() {
-    unlockAudio(); // Mobil ses motorunu uyandır
+    if (!state.audioEnabled) {
+      // Kullanıcı butona bastığında ama ses kapalıysa otomatik ses açmaya çalışalım
+      unlockAudio();
+    }
     var text = document.getElementById('note').value.trim();
     if (!text) { setResponse(I18N[state.lang].msgNoText); return; }
     setResponse("Abide düşünüyor...");
