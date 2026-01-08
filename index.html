@@ -450,26 +450,27 @@
     window.speechSynthesis.cancel();
     window.speechSynthesis.resume();
 
-    var cleanText = text.replace(/<[^>]*>/g, "").replace(/\*/g, "");
-    var u = new SpeechSynthesisUtterance(cleanText);
+    setTimeout(() => {
+      var cleanText = text.replace(/<[^>]*>/g, "").replace(/\*/g, "");
+      var u = new SpeechSynthesisUtterance(cleanText);
 
-    var langMap = { "tr": "tr-TR", "ru": "ru-RU", "en": "en-US" };
-    var targetLang = langMap[state.lang] || "tr-TR";
-    u.lang = targetLang;
+      var langMap = { "tr": "tr-TR", "ru": "ru-RU", "en": "en-US" };
+      var targetLang = langMap[state.lang] || "tr-TR";
+      u.lang = targetLang;
 
-    // Mevcut sesler arasından en uygununu seçmeye çalış
-    var allVoices = window.speechSynthesis.getVoices();
-    if (allVoices.length > 0) {
-      var voice = allVoices.find(v => v.lang === targetLang || v.lang.startsWith(targetLang.split('-')[0]));
-      if (voice) u.voice = voice;
-    }
+      // Mevcut sesler arasından en uygununu seçmeye çalış
+      var allVoices = window.speechSynthesis.getVoices();
+      if (allVoices.length > 0) {
+        var voice = allVoices.find(v => v.lang === targetLang || v.lang.startsWith(targetLang.split('-')[0]));
+        if (voice) u.voice = voice;
+      }
 
-    u.rate = 0.95;
-    u.pitch = 1.0;
-    u.volume = 1.0;
+      u.rate = 0.95;
+      u.pitch = 1.0;
+      u.volume = 1.0;
 
-    // Uzun metinlerde Safari'nin durmasını engellemek için periyodik resume (opsiyonel)
-    window.speechSynthesis.speak(u);
+      window.speechSynthesis.speak(u);
+    }, 50);
   }
 
   function manualSpeak() {
@@ -477,28 +478,26 @@
     state.audioEnabled = true;
     updateAudioBtn();
 
-    // Direkt etkileşimle sesi uyandır
-    var u = new SpeechSynthesisUtterance("Ses aktif.");
-    u.lang = state.lang === "tr" ? "tr-TR" : "en-US";
-    u.volume = 0.5;
-    window.speechSynthesis.speak(u);
+    // Direkt etkileşimle sesi uyandır (iOS için kritik)
+    unlockAudio();
 
     setTimeout(() => {
       var txt = document.getElementById('responseBox').textContent;
       if (txt && txt !== "Yanıt bekliyor..." && txt !== "Abide düşünüyor...") {
         speakResponse(txt);
       }
-    }, 100);
+    }, 300);
   }
 
   function toggleAudioInit() {
     state.audioEnabled = !state.audioEnabled;
     if (state.audioEnabled) {
+      document.getElementById("toggleAudioBtn").textContent = "⌛ Hazırlanıyor...";
       unlockAudio();
     } else {
       window.speechSynthesis.cancel();
+      updateAudioBtn();
     }
-    updateAudioBtn();
   }
 
   function updateAudioBtn() {
@@ -510,14 +509,33 @@
   function unlockAudio() {
     if (!window.speechSynthesis) return;
     state.audioEnabled = true;
-    window.speechSynthesis.resume();
 
-    // Sesin açıldığını teyit eden anlık ses
-    var msg = (state.lang === "tr") ? "Ses sistemi açıldı." : "Audio system enabled.";
+    // 1. Teknik: Web Audio API ile cihazın ses 'mute' kilidini kır (iOS için en sağlam yol)
+    try {
+      var AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) {
+        var context = new AudioContext();
+        var oscillator = context.createOscillator();
+        var gain = context.createGain();
+        gain.gain.value = 0.01; // Çok düşük ses
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(0);
+        oscillator.stop(0.1);
+      }
+    } catch (e) { console.warn("AudioContext error", e); }
+
+    // 2. Teknik: TTS motorunu uyandır
+    window.speechSynthesis.resume();
+    var msg = (state.lang === "tr") ? "Sistem hazır." : "System ready.";
     var u = new SpeechSynthesisUtterance(msg);
     u.lang = state.lang === "tr" ? "tr-TR" : "en-US";
-    u.volume = 0.3;
+    u.volume = 0.5;
+
+    // iOS Safari'de ilk sesin çıkması için cancel + speak
+    window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
+
     updateAudioBtn();
   }
 
