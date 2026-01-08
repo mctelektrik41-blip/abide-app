@@ -208,6 +208,7 @@
 
   var state = {
     audioEnabled: false,
+    voicesLoaded: false,
     lang: "tr",
     religion: "islam",
     denom: "sunni",
@@ -444,33 +445,58 @@
 
   function speakResponse(text) {
     if (!window.speechSynthesis || !state.audioEnabled) return;
+
+    // Mobil Safari/Chrome için her konuşma öncesi temizlik ve uyandırma
     window.speechSynthesis.cancel();
+    window.speechSynthesis.resume();
 
-    // Mobil Safari için ekstra 'resume' ve boş ses tetiklemesi
-    var silent = new SpeechSynthesisUtterance('');
-    window.speechSynthesis.speak(silent);
+    var cleanText = text.replace(/<[^>]*>/g, "").replace(/\*/g, "");
+    var u = new SpeechSynthesisUtterance(cleanText);
 
-    setTimeout(() => {
-      var cleanText = text.replace(/<[^>]*>/g, "").replace(/\*/g, "");
-      var u = new SpeechSynthesisUtterance(cleanText);
-      var langMap = { "tr": "tr-TR", "ru": "ru-RU", "en": "en-US" };
-      u.lang = langMap[state.lang] || "tr-TR";
-      u.rate = 0.9;
-      window.speechSynthesis.speak(u);
-    }, 50);
+    var langMap = { "tr": "tr-TR", "ru": "ru-RU", "en": "en-US" };
+    var targetLang = langMap[state.lang] || "tr-TR";
+    u.lang = targetLang;
+
+    // Mevcut sesler arasından en uygununu seçmeye çalış
+    var allVoices = window.speechSynthesis.getVoices();
+    if (allVoices.length > 0) {
+      var voice = allVoices.find(v => v.lang === targetLang || v.lang.startsWith(targetLang.split('-')[0]));
+      if (voice) u.voice = voice;
+    }
+
+    u.rate = 0.95;
+    u.pitch = 1.0;
+    u.volume = 1.0;
+
+    // Uzun metinlerde Safari'nin durmasını engellemek için periyodik resume (opsiyonel)
+    window.speechSynthesis.speak(u);
   }
 
   function manualSpeak() {
+    if (!window.speechSynthesis) return;
     state.audioEnabled = true;
     updateAudioBtn();
-    var txt = document.getElementById('responseBox').textContent;
-    if (txt) speakResponse(txt);
+
+    // Direkt etkileşimle sesi uyandır
+    var u = new SpeechSynthesisUtterance("Ses aktif.");
+    u.lang = state.lang === "tr" ? "tr-TR" : "en-US";
+    u.volume = 0.5;
+    window.speechSynthesis.speak(u);
+
+    setTimeout(() => {
+      var txt = document.getElementById('responseBox').textContent;
+      if (txt && txt !== "Yanıt bekliyor..." && txt !== "Abide düşünüyor...") {
+        speakResponse(txt);
+      }
+    }, 100);
   }
 
   function toggleAudioInit() {
     state.audioEnabled = !state.audioEnabled;
     if (state.audioEnabled) {
       unlockAudio();
+    } else {
+      window.speechSynthesis.cancel();
     }
     updateAudioBtn();
   }
@@ -484,11 +510,22 @@
   function unlockAudio() {
     if (!window.speechSynthesis) return;
     state.audioEnabled = true;
-    var u = new SpeechSynthesisUtterance('Se'); // Çok kısa bir ses
-    u.volume = 0;
-    window.speechSynthesis.speak(u);
     window.speechSynthesis.resume();
+
+    // Sesin açıldığını teyit eden anlık ses
+    var msg = (state.lang === "tr") ? "Ses sistemi açıldı." : "Audio system enabled.";
+    var u = new SpeechSynthesisUtterance(msg);
+    u.lang = state.lang === "tr" ? "tr-TR" : "en-US";
+    u.volume = 0.3;
+    window.speechSynthesis.speak(u);
     updateAudioBtn();
+  }
+
+  // Seslerin yüklenmesini bekleyen yapı
+  if (window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = () => {
+      state.voicesLoaded = true;
+    };
   }
 
   async function submitText() {
