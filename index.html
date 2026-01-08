@@ -267,7 +267,12 @@
       relLabel: "Din:",
       denomLabel: "Mezhep/Yol:",
       genderLabel: "Cinsiyet:",
+      genderOptions: { male: "Erkek", female: "Kadın" },
       setupHint: "Bu seçimler Abide'nin sana nasıl hitap edeceğini belirler.",
+      premiumBtn: "👑 Reklamları Kaldır (30 TL)",
+      audioOn: "🔊 Ses Açık",
+      audioOff: "🔇 Ses Kapalı",
+      audioReady: "Sistem hazır.",
       feelTitle: "Nasıl hissediyorsun?",
       btnTired: "Yorgun",
       btnFear: "Korkmuş",
@@ -276,14 +281,19 @@
       feelNote: "Rahat hissetmen ve teselli bulman dileğiyle.",
       replyTitle: "ABIDE yanıtı",
       responseDefault: "Yanıt bekliyor...",
+      thinking: "Abide düşünüyor...",
+      errorConn: "Bağlantı sorunu.",
+      micListening: "Dinliyor...",
+      micStopped: "Durduruldu.",
+      micNoSupport: "Tarayıcı desteklemiyor.",
+      micNoPermission: "Mikrofon izni reddedildi.",
       writeTitle: "İstersen yaz (kaydedilmez)",
       placeholder: "Buraya yazabilirsin...",
       btnSend: "Gönder",
       btnClear: "Sil",
       disclaimer: "ABIDE bir dinî kurum değildir. Bu içerikler kişisel rahatlama ve tefekkür amaçlıdır.",
       msgCleared: "Metin silindi.",
-      msgNoText: "Bir şey yazmadın. İstersen birkaç cümle yaz ve Gönder'e bas.",
-      msgPlaying: (tag) => "Seçilen duygu: " + tag + ". Şimdi teselli dinle."
+      msgNoText: "Bir şey yazmadın."
     },
     ru: {
       subtitle: "Тайно. Без осуждения. Спокойно.",
@@ -292,15 +302,26 @@
       relLabel: "Религия:",
       denomLabel: "Традиция:",
       genderLabel: "Пол:",
-      setupHint: "Эти выборы настраивают язык и тон.",
+      genderOptions: { male: "Мужчина", female: "Женщина" },
+      setupHint: "Эти выборы настраивают язык и тон ответов.",
+      premiumBtn: "👑 Убрать рекламу (30 TL)",
+      audioOn: "🔊 Звук Вкл",
+      audioOff: "🔇 Звук Выкл",
+      audioReady: "Система готова.",
       feelTitle: "Что ты чувствуешь?",
       btnTired: "Усталость",
       btnFear: "Страх",
       btnAlone: "Одиночество",
       btnGuilt: "Вина",
-      feelNote: "Пусть bu prineset tebe mir.",
+      feelNote: "Пусть это принесет тебе мир.",
       replyTitle: "Ответ ABIDE",
       responseDefault: "Ожидание ответа...",
+      thinking: "Abide думает...",
+      errorConn: "Ошибка соединения.",
+      micListening: "Слушаю...",
+      micStopped: "Остановлено.",
+      micNoSupport: "Браузер не поддерживает.",
+      micNoPermission: "Микрофон отклонен.",
       writeTitle: "Пиши здесь",
       placeholder: "Пиши...",
       btnSend: "Отправить",
@@ -316,7 +337,12 @@
       relLabel: "Religion:",
       denomLabel: "Denom/Path:",
       genderLabel: "Gender:",
+      genderOptions: { male: "Male", female: "Female" },
       setupHint: "These choices set your language and tone.",
+      premiumBtn: "👑 Remove Ads (30 TL)",
+      audioOn: "🔊 Audio On",
+      audioOff: "🔇 Audio Off",
+      audioReady: "System ready.",
       feelTitle: "How do you feel?",
       btnTired: "Tired",
       btnFear: "Fear",
@@ -325,6 +351,12 @@
       feelNote: "Hope this brings you peace.",
       replyTitle: "ABIDE reply",
       responseDefault: "Waiting for reply...",
+      thinking: "Abide is thinking...",
+      errorConn: "Connection error.",
+      micListening: "Listening...",
+      micStopped: "Stopped.",
+      micNoSupport: "Browser not supported.",
+      micNoPermission: "Mic permission denied.",
       writeTitle: "Write here",
       placeholder: "Write...",
       btnSend: "Send",
@@ -338,6 +370,19 @@
   function applyLang() { state.lang = document.getElementById('lang').value; renderI18n(); updateReligionsUI(); }
 
   function updateReligionsUI() {
+    // Din Listesini Doldur
+    var rSelect = document.getElementById("religion");
+    var currentRel = state.religion;
+    rSelect.innerHTML = "";
+    for (var key in RELIGIONS) {
+      var opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = RELIGIONS[key].label[state.lang];
+      if (key === currentRel) opt.selected = true;
+      rSelect.appendChild(opt);
+    }
+
+    // Mezhep Listesini Doldur
     var rData = RELIGIONS[state.religion];
     var dSelect = document.getElementById("denom");
     dSelect.innerHTML = "";
@@ -368,6 +413,23 @@
     document.getElementById('relLabel').textContent = t.relLabel;
     document.getElementById('denomLabel').textContent = t.denomLabel;
     document.getElementById('genderLabel').textContent = t.genderLabel;
+    document.getElementById('setupHint').textContent = t.setupHint;
+
+    // Cinsiyet Listesini Doldur
+    var gSelect = document.getElementById("gender");
+    var currentGen = state.gender;
+    gSelect.innerHTML = "";
+    for (var key in t.genderOptions) {
+      var opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = t.genderOptions[key];
+      if (key === currentGen) opt.selected = true;
+      gSelect.appendChild(opt);
+    }
+
+    document.getElementById('btnPremium').textContent = t.premiumBtn;
+    updateAudioBtn(); // Ses butonunu dile göre güncelle
+
     document.getElementById('feelTitle').textContent = t.feelTitle;
     document.getElementById('btnTired').textContent = t.btnTired;
     document.getElementById('btnFear').textContent = t.btnFear;
@@ -384,7 +446,7 @@
 
   function setResponse(msg) {
     document.getElementById('responseBox').textContent = msg;
-    if (msg && msg !== "Abide düşünüyor..." && msg !== "Yanıt bekliyor...") {
+    if (msg && msg !== I18N[state.lang].thinking && msg !== I18N[state.lang].responseDefault) {
       document.getElementById('btnSpeakAgain').style.display = "inline-block";
     } else {
       document.getElementById('btnSpeakAgain').style.display = "none";
@@ -402,7 +464,7 @@
     };
     var userText = maps[tag][state.lang];
     document.getElementById('note').value = userText;
-    setResponse("Abide düşünüyor...");
+    setResponse(I18N[state.lang].thinking);
     var aiResponse = await callHuggingFaceAI(userText, tag);
     if (aiResponse) { setResponse(aiResponse); speakResponse(aiResponse); }
   }
@@ -440,7 +502,7 @@
       var response = await fetch(apiUrl, { method: "POST", headers: { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" }, body: JSON.stringify({ model: "Qwen/Qwen2.5-7B-Instruct", messages: [{ role: "system", content: system }, ...chatHistory, { role: "user", content: userText }], max_tokens: 500 }) });
       var data = await response.json();
       if (data.choices) { incrementUsage(); var txt = data.choices[0].message.content; chatHistory.push({ role: "user", content: userText }); chatHistory.push({ role: "assistant", content: txt }); if (chatHistory.length > 6) chatHistory = chatHistory.slice(-6); return txt; }
-    } catch (e) { return "Bağlantı sorunu."; }
+    } catch (e) { return I18N[state.lang].errorConn; }
   }
 
   function speakResponse(text) {
@@ -483,7 +545,7 @@
 
     setTimeout(() => {
       var txt = document.getElementById('responseBox').textContent;
-      if (txt && txt !== "Yanıt bekliyor..." && txt !== "Abide düşünüyor...") {
+      if (txt && txt !== I18N[state.lang].responseDefault && txt !== I18N[state.lang].thinking) {
         speakResponse(txt);
       }
     }, 300);
@@ -502,7 +564,8 @@
 
   function updateAudioBtn() {
     var btn = document.getElementById("toggleAudioBtn");
-    btn.innerHTML = state.audioEnabled ? "🔊 Ses Açık" : "🔇 Ses Kapalı";
+    var t = I18N[state.lang];
+    btn.innerHTML = state.audioEnabled ? t.audioOn : t.audioOff;
     btn.style.borderColor = state.audioEnabled ? "#4CAF50" : "#444";
   }
 
@@ -527,9 +590,9 @@
 
     // 2. Teknik: TTS motorunu uyandır
     window.speechSynthesis.resume();
-    var msg = (state.lang === "tr") ? "Sistem hazır." : "System ready.";
-    var u = new SpeechSynthesisUtterance(msg);
-    u.lang = state.lang === "tr" ? "tr-TR" : "en-US";
+    var t = I18N[state.lang];
+    var u = new SpeechSynthesisUtterance(t.audioReady);
+    u.lang = state.lang === "tr" ? "tr-TR" : (state.lang === "ru" ? "ru-RU" : "en-US");
     u.volume = 0.5;
 
     // iOS Safari'de ilk sesin çıkması için cancel + speak
@@ -547,13 +610,10 @@
   }
 
   async function submitText() {
-    if (!state.audioEnabled) {
-      // Kullanıcı butona bastığında ama ses kapalıysa otomatik ses açmaya çalışalım
-      unlockAudio();
-    }
+    unlockAudio(); // Mobil ses motorunu uyandır
     var text = document.getElementById('note').value.trim();
     if (!text) { setResponse(I18N[state.lang].msgNoText); return; }
-    setResponse("Abide düşünüyor...");
+    setResponse(I18N[state.lang].thinking);
     var aiResponse = await callHuggingFaceAI(text);
     if (aiResponse) { setResponse(aiResponse); speakResponse(aiResponse); }
   }
@@ -564,8 +624,9 @@
   var rec;
   function setupRec() {
     var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var t = I18N[state.lang];
     if (!SpeechRecognition) {
-      document.getElementById("micStatus").textContent = "Tarayıcı desteklemiyor.";
+      document.getElementById("micStatus").textContent = t.micNoSupport;
       return;
     }
     rec = new SpeechRecognition();
@@ -577,18 +638,18 @@
     };
     rec.onstart = () => {
       document.getElementById("btnMic").classList.add("recording");
-      document.getElementById("micStatus").textContent = "Dinliyor...";
+      document.getElementById("micStatus").textContent = t.micListening;
     };
     rec.onend = () => {
       document.getElementById("btnMic").classList.remove("recording");
-      document.getElementById("micStatus").textContent = "Durduruldu.";
+      document.getElementById("micStatus").textContent = t.micStopped;
     };
     rec.onerror = (e) => {
       document.getElementById("btnMic").classList.remove("recording");
       var msg = "Hata";
-      if (e.error === 'not-allowed') msg = "Mikrofon izni reddedildi.";
-      else if (e.error === 'network') msg = "İnternet bağlantısı hatası.";
-      else if (e.error === 'no-speech') msg = "Ses algılanmadı.";
+      if (e.error === 'not-allowed') msg = t.micNoPermission;
+      else if (e.error === 'network') msg = t.errorConn;
+      else if (e.error === 'no-speech') msg = "No speech."; // opsiyonel
       document.getElementById("micStatus").textContent = msg;
       console.error("Mic error:", e.error);
     };
