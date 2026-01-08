@@ -159,6 +159,16 @@
       style="padding:12px; border-radius:10px; border:1px solid #444; background:#0b0b0b; min-height:48px; opacity:0.95;">
       Buraya yazdıklarından bir duygu seçilecek ve uygun teselli sesi çalacak.
     </div>
+
+    <!-- REKLAM DUVARI (LİMİT DOLUNCA ÇIKAR) -->
+    <div id="adWall"
+      style="display:none; flex-direction:column; align-items:center; justify-content:center; margin-top:10px; padding:15px; background:#220; border:1px solid #dd0; border-radius:10px;">
+      <div style="font-size:14px; color:#fff; margin-bottom:10px;">🔒 Günlük Limit Doldu</div>
+      <button id="btnWatchAd" onclick="watchAd()"
+        style="background:#f44336; color:white; padding:10px 20px; border:none; border-radius:20px; font-weight:bold; cursor:pointer; margin-top:8px;">
+        📺 Reklamı İzle (+3 Hak)
+      </button>
+    </div>
   </div>
 
   <div style="padding:16px; border:1px solid #333; border-radius:12px; margin-bottom:18px;">
@@ -197,13 +207,17 @@
 </div>
 
 <script>
-  // Basit durum
+  // --- AYARLAR VE SABİTLER ---
+  const EMBEDDED_KEY = "AIzaSyDYaNiOgtuPX8erP-7lgngb2howl-pIwlk";
+
   var state = {
     lang: "tr",
-    religion: "islam",   // Varsayılan Din
-    denom: "sunni",      // Varsayılan Mezhep
+    religion: "islam",
+    denom: "sunni",
     gender: "male",
-    premium: false
+    premium: false,
+    dailyCount: 0,
+    lastVisit: new Date().toDateString()
   };
 
   // Din ve Mezhep Veritabanı
@@ -552,7 +566,7 @@
 
     // SÜREKLİ DİNLEME: Kullanıcı dur diyene kadar kapanmaz
     rec.continuous = true;
-    rec.interimResults = true; // Anlık konuşmayı kutuya yazsın
+    rec.interimResults = false; // TEKRARI ÖNLEMEK İÇİN: Sadece kesinleşince yazsın
 
     rec.onstart = function () {
       isRecording = true;
@@ -568,19 +582,15 @@
     };
 
     rec.onresult = function (event) {
-      // Sonuçları topla
-      var finalTranscript = "";
-      for (var i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript + " ";
-        }
-      }
+      // Sadece en son gelen sonucu alalım
+      var lastIndex = event.results.length - 1;
+      var transcript = event.results[lastIndex][0].transcript;
 
-      // Mevcut metnin sonuna ekle (Ama sürekli tekrar etmesin diye mantık kur)
-      // Basit yöntem: Interim (geçici) yerine sadece Final olanları ekleyelim.
-      if (finalTranscript) {
+      // Boş değilse ekle
+      if (transcript) {
         var note = document.getElementById("note");
-        note.value = note.value + finalTranscript;
+        // Önceki metin varsa boşluk bırakıp ekle
+        note.value = note.value ? (note.value.trim() + " " + transcript) : transcript;
       }
     };
 
@@ -616,94 +626,108 @@
     recognition = setupRecognition();
   }, 1000);
 
+
+
+  function checkDailyLimit() {
+    if (state.premium) return true;
+    var today = new Date().toDateString();
+    if (state.lastVisit !== today) {
+      state.dailyCount = 0;
+      state.lastVisit = today;
+      localStorage.setItem("abide_last_visit", today);
+      localStorage.setItem("abide_daily_count", "0");
+    }
+    if (state.dailyCount >= 3) {
+      showLimitWarning();
+      return false;
+    }
+    return true;
+  }
+
+  function incrementUsage() {
+    if (state.premium) return;
+    state.dailyCount++;
+    localStorage.setItem("abide_daily_count", state.dailyCount);
+  }
+
+  function showLimitWarning() {
+    var txt = {
+      tr: "Bugünkü 3 ücretsiz soru hakkın doldu. Devam etmek için kısa bir reklam izlemelisin.",
+      ru: "Ваши 3 бесплатных вопроса на сегодня исчерпаны. Посмотрите рекламу, чтобы продолжить.",
+      en: "You used your 3 free questions for today. Watch an ad to continue."
+    };
+    setResponse(txt[state.lang]);
+    document.getElementById("adWall").style.display = "flex";
+  }
+
+  function watchAd() {
+    var btn = document.getElementById("btnWatchAd");
+    btn.innerHTML = "Reklam Yükleniyor...";
+    btn.disabled = true;
+    setTimeout(function () {
+      alert("Teşekkürler! +3 Soru Hakkı Kazandın.");
+      state.dailyCount = 0;
+      localStorage.setItem("abide_daily_count", "0");
+      document.getElementById("adWall").style.display = "none";
+      btn.innerHTML = "📺 Reklamı İzle (+3 Hak)";
+      btn.disabled = false;
+      setResponse("Harika! Kaldığımız yerden devam edelim. Dinliyorum...");
+    }, 2000);
+  }
+
   async function callHuggingFaceAI(userText, detectedTag) {
+    if (!checkDailyLimit()) return null;
+
     var apiKey = localStorage.getItem("abide_api_key");
-    if (!apiKey) return null;
+    if (!apiKey || apiKey.trim() === "") apiKey = EMBEDDED_KEY;
+    if (!apiKey) {
+      setResponse("Hata: Token bulunamadı.");
+      return null;
+    }
     apiKey = apiKey.trim();
 
+    // API Tipi Belirleme (Google vs HuggingFace)
+    var isGoogle = apiKey.startsWith("AIza");
+    var apiUrl = isGoogle
+      ? "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+      : "https://router.huggingface.co/v1/chat/completions";
+
+    var modelName = isGoogle ? "gemini-1.5-flash" : "google/gemma-2-9b-it";
+
+    // ... Prompt ve Mesaj Hazırlığı ...
     var langName = state.lang === "tr" ? "Türkçe" : (state.lang === "ru" ? "Rusça" : "İngilizce");
     var genderName = state.gender === "male" ? "Erkek" : "Kadın";
-
-    // Din ve Mezhep İsimlerini Al
     var rData = RELIGIONS[state.religion];
     var rLabel = rData.label[state.lang];
-    var dLabel = "";
-    if (rData.denoms && rData.denoms[state.denom]) {
-      dLabel = rData.denoms[state.denom][state.lang];
-    }
+    var dLabel = (rData.denoms && rData.denoms[state.denom]) ? rData.denoms[state.denom][state.lang] : "";
     var fullFaith = rLabel + (dLabel ? " (" + dLabel + ")" : "");
+    var hitap = (state.lang === "tr") ? (state.gender === "male" ? "Beyefendi/Oğlum/Kardeşim" : "Hanımefendi/Kızım/Kardeşim") : (state.lang === "ru" ? (state.gender === "male" ? "Господин/Sın/Brat" : "Gospoga/Doch/Sestra") : (state.gender === "male" ? "Sir/Son/Brother" : "Madam/Daughter/Sister"));
 
-    // Özel Hitap Belirleme
-    var hitap = "";
-    if (state.lang === "tr") {
-      hitap = state.gender === "male" ? "Beyefendi/Oğlum/Kardeşim" : "Hanımefendi/Kızım/Kardeşim";
-    } else if (state.lang === "ru") {
-      hitap = state.gender === "male" ? "Господин/Сын/Брат" : "Госпожа/Дочь/Сестра";
-    } else { // English
-      hitap = state.gender === "male" ? "Sir/Son/Brother" : "Madam/Daughter/Sister";
-    }
+    var systemInstruction = `Sen 'Abide' adında, bilge, şefkatli ve derin konuşan bir manevi rehbersin.
+      KULLANICI PROFİLİ: Cinsiyet: ${genderName} (${hitap}), İnanç: ${fullFaith}, Dil: ${langName}.
+      KURALLAR: 1. Yapay zeka gibi konuşma. 2. Cevaplar kısa olsun. 3. İnanca uygun terminoloji kullan. 4. Cevabı sadece ${langName} dilinde ver.`;
 
-
-    // --- SİSTEM PROMPT (Kişilik ve Talimatlar) ---
-    var systemInstruction = `Sen 'Abide' adında, bilge, şefkatli ama aynı zamanda ikna edici ve derin konuşan bir manevi rehbersin.
-      
-      KULLANICI PROFİLİ:
-      - Cinsiyet: ${genderName} (${hitap} gibi hitap edebilirsin, samimiyetine göre seç).
-      - İnanç/Din: ${fullFaith}. (Lütfen cevaplarını bu inancın kaynaklarına, terminolojisine ve ruhuna uygun ver).
-      - Dil: ${langName}.
-
-      KURALLAR:
-      1. ASLA "yapay zeka" gibi konuşma. Gerçek bir dert ortağı, bir mürşit, bir bilge veya rahip gibi konuş (İnanca göre Rol yap).
-      2. YUVARLAK CEVAPLAR VERME. Kullanıcının sorusuna net, felsefi ve manevi açıdan doyurucu, ikna edici cevaplar ver.
-      3. Kısa cevap verme. Kullanıcıyı anladığını ispatla.
-      4. "Bilmiyorum" veya "Ben bir modelim" deme. Bir bilge rolüne bürün.
-      5. Teselli ederken boş vaatler verme; acının anlamı üzerine düşündür.`;
-
-    // Sohbet Geçmişini Hazırla
-    // System mesajını en başa ekle
-    var promptMessages = [
-      { role: "system", content: systemInstruction }
+    var messages = [
+      { role: "system", content: systemInstruction },
+      ...chatHistory,
+      { role: "user", content: userText }
     ];
-
-    // Önceki konuşmaları (Memory) ekle
-    chatHistory.forEach(function (msg) {
-      promptMessages.push(msg);
-    });
-
-    // Yeni kullanıcı mesajını ekle
-    var userMsgObj = { role: "user", content: userText };
-    promptMessages.push(userMsgObj);
-
-    // --- /Hazırlık ---
-
-    // Hugging Face Router API (OpenAI Uyumlu)
-    var url = "https://router.huggingface.co/v1/chat/completions";
-
-    // Model: Google Gemma-2
-    var model = "google/gemma-2-9b-it";
 
     try {
       setResponse("Abide düşünüyor... (Kişiselleştirilmiş)");
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-      var response = await fetch(url, {
+      var response = await fetch(apiUrl, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + apiKey
+          "Authorization": "Bearer " + apiKey,
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: model,
-          messages: promptMessages,
-          max_tokens: 350, // Biraz daha uzun konuşabilsin
+          model: modelName,
+          messages: messages,
+          max_tokens: 500,
           temperature: 0.7
-        }),
-        signal: controller.signal
+        })
       });
-
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
         var errText = await response.text();
@@ -713,6 +737,8 @@
       var data = await response.json();
 
       if (data && data.choices && data.choices.length > 0) {
+        // Başarılı cevap geldi, sayacı artır
+        incrementUsage();
         var aiText = data.choices[0].message.content;
 
         // HAFIZAYA KAYDET
