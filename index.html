@@ -104,16 +104,7 @@
       Bu seçimler seni sınıflandırmaz; yalnızca ton ve metin dilini ayarlar.
     </div>
 
-    <!-- API Key Girişi (Gizlenebilir yapılabilir ama şimdilik basit olsun) -->
-    <div style="border-top:1px solid #444; padding-top:12px;">
-      <div style="margin-bottom:6px; font-size:13px; opacity:0.9;">Hugging Face Token (Ücretsiz):</div>
-      <input type="password" id="apiKeyInput" placeholder="hf_ ile başlayan anahtarı buraya yapıştır..."
-        onchange="saveApiKey()"
-        style="width:100%; padding:8px; border-radius:8px; border:1px solid #555; background:#111; color:#fff; font-family:monospace;">
-      <div style="font-size:11px; opacity:0.6; margin-top:4px;">
-        Hugging Face'den aldığın ücretsiz token'ı gir. (Ayarlar -> Access Tokens)
-      </div>
-    </div>
+
 
     <!-- PREMIUM ALANI -->
     <div style="border-top:1px solid #444; margin-top:12px; padding-top:12px; text-align:center;">
@@ -163,7 +154,7 @@
     <!-- REKLAM DUVARI (LİMİT DOLUNCA ÇIKAR) -->
     <div id="adWall"
       style="display:none; flex-direction:column; align-items:center; justify-content:center; margin-top:10px; padding:15px; background:#220; border:1px solid #dd0; border-radius:10px;">
-      <div style="font-size:14px; color:#fff; mb:10px;">🔒 Günlük Limit Doldu</div>
+      <div style="font-size:14px; color:#fff; margin-bottom:10px;">🔒 Günlük Limit Doldu</div>
       <button id="btnWatchAd" onclick="watchAd()"
         style="background:#f44336; color:white; padding:10px 20px; border:none; border-radius:20px; font-weight:bold; cursor:pointer; margin-top:8px;">
         📺 Reklamı İzle (+3 Hak)
@@ -207,13 +198,17 @@
 </div>
 
 <script>
-  // Basit durum
+  // --- AYARLAR VE SABİTLER ---
+  const EMBEDDED_KEY = "AIzaSyDYaNiOgtuPX8erP-7lgngb2howl-pIwlk";
+
   var state = {
     lang: "tr",
-    religion: "islam",   // Varsayılan Din
-    denom: "sunni",      // Varsayılan Mezhep
+    religion: "islam",
+    denom: "sunni",
     gender: "male",
-    premium: false
+    premium: false,
+    dailyCount: 0,
+    lastVisit: new Date().toDateString()
   };
 
   // Din ve Mezhep Veritabanı
@@ -462,14 +457,10 @@
 
     setResponse("Abide düşünüyor... (" + tag + ")");
     // AI Çağır
-    if (localStorage.getItem("abide_api_key")) {
-      var aiResponse = await callHuggingFaceAI(userText, tag);
-      if (aiResponse) {
-        setResponse(aiResponse);
-        speakResponse(aiResponse);
-      }
-    } else {
-      setResponse(I18N[state.lang].msgNoText + " (AI için Token giriniz)");
+    var aiResponse = await callHuggingFaceAI(userText, tag);
+    if (aiResponse) {
+      setResponse(aiResponse);
+      speakResponse(aiResponse);
     }
   }
 
@@ -505,21 +496,7 @@
   }
 
   // --- YENİ: AI İŞLEMLERİ ---
-  function saveApiKey() {
-    var key = document.getElementById("apiKeyInput").value.trim();
-    if (key) {
-      localStorage.setItem("abide_api_key", key);
-    } else {
-      localStorage.removeItem("abide_api_key");
-    }
-  }
-
   function loadApiKey() {
-    var saved = localStorage.getItem("abide_api_key");
-    if (saved) {
-      document.getElementById("apiKeyInput").value = saved;
-    }
-
     // Premium kontrolü
     var isPrem = localStorage.getItem("abide_premium");
     if (isPrem === "true") {
@@ -622,40 +599,22 @@
     recognition = setupRecognition();
   }, 1000);
 
-  // --- AYARLAR VE SABİTLER ---
-  // BURAYA KENDİ HUGGING FACE TOKEN'INIZI YAZIN (Tırnak içine):
-  const EMBEDDED_KEY = ""; // Örn: "" 
 
-  var state = {
-    lang: "tr",
-    religion: "islam",
-    denom: "sunni",
-    gender: "male",
-    premium: false,
-    dailyCount: 0,
-    lastVisit: new Date().toDateString()
-  };
 
   function checkDailyLimit() {
-    // 1. Premium ise limit yok
     if (state.premium) return true;
-
-    // 2. Gün kontrolü
     var today = new Date().toDateString();
     if (state.lastVisit !== today) {
-      state.dailyCount = 0; // Yeni gün, sayaç sıfırla
+      state.dailyCount = 0;
       state.lastVisit = today;
       localStorage.setItem("abide_last_visit", today);
       localStorage.setItem("abide_daily_count", "0");
     }
-
-    // 3. Limit kontrolü (3 Soru Hakkı)
     if (state.dailyCount >= 3) {
       showLimitWarning();
-      return false; // Dur
+      return false;
     }
-
-    return true; // Devam et
+    return true;
   }
 
   function incrementUsage() {
@@ -665,142 +624,83 @@
   }
 
   function showLimitWarning() {
-    // Uyarı metinleri
     var txt = {
-      tr: "bugünkü 3 ücretsiz soru hakkın doldu. Devam etmek için kısa bir reklam izlemelisin.",
+      tr: "Bugünkü 3 ücretsiz soru hakkın doldu. Devam etmek için kısa bir reklam izlemelisin.",
       ru: "Ваши 3 бесплатных вопроса на сегодня исчерпаны. Посмотрите рекламу, чтобы продолжить.",
       en: "You used your 3 free questions for today. Watch an ad to continue."
     };
-
     setResponse(txt[state.lang]);
-
-    // Reklam İzle Butonu Göster
     document.getElementById("adWall").style.display = "flex";
   }
 
   function watchAd() {
-    // BURASI REKLAM İZLEME SİMÜLASYONU
-    // Gerçekte burada Google AdMob 'Rewarded Ad' çalışır.
     var btn = document.getElementById("btnWatchAd");
     btn.innerHTML = "Reklam Yükleniyor...";
     btn.disabled = true;
-
     setTimeout(function () {
-      // Reklam bitti sayalım
       alert("Teşekkürler! +3 Soru Hakkı Kazandın.");
-      state.dailyCount = 0; // Hakkı sıfırla
+      state.dailyCount = 0;
       localStorage.setItem("abide_daily_count", "0");
-
       document.getElementById("adWall").style.display = "none";
       btn.innerHTML = "📺 Reklamı İzle (+3 Hak)";
       btn.disabled = false;
-
       setResponse("Harika! Kaldığımız yerden devam edelim. Dinliyorum...");
-    }, 2000); // 2 saniye bekletiyoruz (reklam süresi gibi)
+    }, 2000);
   }
 
   async function callHuggingFaceAI(userText, detectedTag) {
-    // Önce limit kontrolü
     if (!checkDailyLimit()) return null;
 
-    // Token Seçimi: Önce localStorage, yoksa Gömülü Kod
     var apiKey = localStorage.getItem("abide_api_key");
-    if (!apiKey || apiKey.trim() === "") {
-      apiKey = EMBEDDED_KEY;
-    }
-
+    if (!apiKey || apiKey.trim() === "") apiKey = EMBEDDED_KEY;
     if (!apiKey) {
-      setResponse("Hata: Token bulunamadı. Lütfen kodun içine EMBEDDED_KEY alanına token yapıştırın.");
+      setResponse("Hata: Token bulunamadı.");
       return null;
     }
-
     apiKey = apiKey.trim();
 
-    // ... Buradan sonrası standart API çağrısı ...
+    // API Tipi Belirleme (Google vs HuggingFace)
+    var isGoogle = apiKey.startsWith("AIza");
+    var apiUrl = isGoogle
+      ? "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+      : "https://router.huggingface.co/v1/chat/completions";
 
+    var modelName = isGoogle ? "gemini-1.5-flash" : "google/gemma-2-9b-it";
+
+    // ... Prompt ve Mesaj Hazırlığı ...
     var langName = state.lang === "tr" ? "Türkçe" : (state.lang === "ru" ? "Rusça" : "İngilizce");
     var genderName = state.gender === "male" ? "Erkek" : "Kadın";
-
-    // Din ve Mezhep İsimlerini Al
     var rData = RELIGIONS[state.religion];
     var rLabel = rData.label[state.lang];
-    var dLabel = "";
-    if (rData.denoms && rData.denoms[state.denom]) {
-      dLabel = rData.denoms[state.denom][state.lang];
-    }
+    var dLabel = (rData.denoms && rData.denoms[state.denom]) ? rData.denoms[state.denom][state.lang] : "";
     var fullFaith = rLabel + (dLabel ? " (" + dLabel + ")" : "");
+    var hitap = (state.lang === "tr") ? (state.gender === "male" ? "Beyefendi/Oğlum/Kardeşim" : "Hanımefendi/Kızım/Kardeşim") : (state.lang === "ru" ? (state.gender === "male" ? "Господин/Sın/Brat" : "Gospoga/Doch/Sestra") : (state.gender === "male" ? "Sir/Son/Brother" : "Madam/Daughter/Sister"));
 
-    // Özel Hitap Belirleme
-    var hitap = "";
-    if (state.lang === "tr") {
-      hitap = state.gender === "male" ? "Beyefendi/Oğlum/Kardeşim" : "Hanımefendi/Kızım/Kardeşim";
-    } else if (state.lang === "ru") {
-      hitap = state.gender === "male" ? "Господин/Сын/Брат" : "Госпожа/Дочь/Сестра";
-    } else { // English
-      hitap = state.gender === "male" ? "Sir/Son/Brother" : "Madam/Daughter/Sister";
-    }
+    var systemInstruction = `Sen 'Abide' adında, bilge, şefkatli ve derin konuşan bir manevi rehbersin.
+      KULLANICI PROFİLİ: Cinsiyet: ${genderName} (${hitap}), İnanç: ${fullFaith}, Dil: ${langName}.
+      KURALLAR: 1. Yapay zeka gibi konuşma. 2. Cevaplar kısa olsun. 3. İnanca uygun terminoloji kullan. 4. Cevabı sadece ${langName} dilinde ver.`;
 
-
-    // --- SİSTEM PROMPT (Kişilik ve Talimatlar) ---
-    var systemInstruction = `Sen 'Abide' adında, bilge, şefkatli ama aynı zamanda ikna edici ve derin konuşan bir manevi rehbersin.
-      
-      KULLANICI PROFİLİ:
-      - Cinsiyet: ${genderName} (${hitap} gibi hitap edebilirsin, samimiyetine göre seç).
-      - İnanç/Din: ${fullFaith}. (Lütfen cevaplarını bu inancın kaynaklarına, terminolojisine ve ruhuna uygun ver).
-      - Dil: ${langName}.
-
-      KURALLAR:
-      1. ASLA "yapay zeka" gibi konuşma. Gerçek bir dert ortağı, bir mürşit, bir bilge veya rahip gibi konuş (İnanca göre Rol yap).
-      2. YUVARLAK CEVAPLAR VERME. Kullanıcının sorusuna net, felsefi ve manevi açıdan doyurucu, ikna edici cevaplar ver.
-      3. Kısa cevap verme. Kullanıcıyı anladığını ispatla.
-      4. "Bilmiyorum" veya "Ben bir modelim" deme. Bir bilge rolüne bürün.
-      5. Teselli ederken boş vaatler verme; acının anlamı üzerine düşündür.`;
-
-    // Sohbet Geçmişini Hazırla
-    // System mesajını en başa ekle
-    var promptMessages = [
-      { role: "system", content: systemInstruction }
+    var messages = [
+      { role: "system", content: systemInstruction },
+      ...chatHistory,
+      { role: "user", content: userText }
     ];
-
-    // Önceki konuşmaları (Memory) ekle
-    chatHistory.forEach(function (msg) {
-      promptMessages.push(msg);
-    });
-
-    // Yeni kullanıcı mesajını ekle
-    var userMsgObj = { role: "user", content: userText };
-    promptMessages.push(userMsgObj);
-
-    // --- /Hazırlık ---
-
-    // Hugging Face Router API (OpenAI Uyumlu)
-    var url = "https://router.huggingface.co/v1/chat/completions";
-
-    // Model: Google Gemma-2
-    var model = "google/gemma-2-9b-it";
 
     try {
       setResponse("Abide düşünüyor... (Kişiselleştirilmiş)");
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-      var response = await fetch(url, {
+      var response = await fetch(apiUrl, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + apiKey
+          "Authorization": "Bearer " + apiKey,
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: model,
-          messages: promptMessages,
-          max_tokens: 350, // Biraz daha uzun konuşabilsin
+          model: modelName,
+          messages: messages,
+          max_tokens: 500,
           temperature: 0.7
-        }),
-        signal: controller.signal
+        })
       });
-
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
         var errText = await response.text();
@@ -815,7 +715,7 @@
         var aiText = data.choices[0].message.content;
 
         // HAFIZAYA KAYDET
-        chatHistory.push(userMsgObj); // Kullanıcının dediğini hatırla
+        chatHistory.push({ role: "user", content: userText }); // Kullanıcının dediğini hatırla
         chatHistory.push({ role: "assistant", content: aiText }); // Kendi cevabını hatırla
 
         // Hafıza çok şişmesin (Son 6 mesaj - 3 tur)
@@ -872,17 +772,11 @@
 
     setResponse("Abide düşünüyor...");
 
-    // AI'yı dene (Sadece anahtar varsa)
-    if (localStorage.getItem("abide_api_key")) {
-      // Hugging Face fonksiyonunu çağır
-      var aiResponse = await callHuggingFaceAI(text, tag);
-      if (aiResponse) {
-        setResponse(aiResponse);
-
-        speakResponse(aiResponse);
-      }
-    } else {
-      setResponse("Lütfen ayarlardan bir Hugging Face Token girin. Artık sadece AI ile çalışıyorum.");
+    // Hugging Face fonksiyonunu çağır
+    var aiResponse = await callHuggingFaceAI(text, tag);
+    if (aiResponse) {
+      setResponse(aiResponse);
+      speakResponse(aiResponse);
     }
   }
 
