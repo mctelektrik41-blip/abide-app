@@ -163,6 +163,7 @@
         🎤
       </button>
     </div>
+    <div id="micStatus" style="font-size:11px; color:#aaa; margin-top:4px;"></div>
 
     <div style="display:flex; justify-content:space-between; margin-top:10px;">
       <button onclick="submitText()"
@@ -422,8 +423,52 @@
   function buyPremium() { if (confirm("Premium (30 TL) satın al?")) { state.premium = true; localStorage.setItem("abide_premium", "true"); updatePremiumUI(); } }
   function updatePremiumUI() { if (state.premium) { document.getElementById('adBanner').style.display = 'none'; document.getElementById('btnPremium').style.display = 'none'; document.getElementById('premiumStatus').style.display = 'block'; } }
 
-  var rec; function setupRec() { if (!('webkitSpeechRecognition' in window)) return; rec = new webkitSpeechRecognition(); rec.continuous = true; rec.onresult = (e) => { document.getElementById("note").value += e.results[e.results.length - 1][0].transcript; }; rec.onstart = () => document.getElementById("btnMic").classList.add("recording"); rec.onend = () => document.getElementById("btnMic").classList.remove("recording"); }
-  function toggleRecord() { if (!rec) setupRec(); if (!rec) return; if (document.getElementById("btnMic").classList.contains("recording")) rec.stop(); else rec.start(); }
+  var rec;
+  function setupRec() {
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      document.getElementById("micStatus").textContent = "Tarayıcı desteklemiyor.";
+      return;
+    }
+    rec = new SpeechRecognition();
+    rec.continuous = true;
+    rec.interimResults = false;
+    rec.onresult = (e) => {
+      var transcript = e.results[e.results.length - 1][0].transcript;
+      document.getElementById("note").value += (document.getElementById("note").value ? " " : "") + transcript;
+    };
+    rec.onstart = () => {
+      document.getElementById("btnMic").classList.add("recording");
+      document.getElementById("micStatus").textContent = "Dinliyor...";
+    };
+    rec.onend = () => {
+      document.getElementById("btnMic").classList.remove("recording");
+      document.getElementById("micStatus").textContent = "Durduruldu.";
+    };
+    rec.onerror = (e) => {
+      document.getElementById("btnMic").classList.remove("recording");
+      var msg = "Hata";
+      if (e.error === 'not-allowed') msg = "Mikrofon izni reddedildi.";
+      else if (e.error === 'network') msg = "İnternet bağlantısı hatası.";
+      else if (e.error === 'no-speech') msg = "Ses algılanmadı.";
+      document.getElementById("micStatus").textContent = msg;
+      console.error("Mic error:", e.error);
+    };
+  }
+  function toggleRecord() {
+    if (location.protocol === 'file:') {
+      alert("UYARI: Yerel dosya (file://) üzerinden mikrofon çalışmaz. Lütfen GitHub Pages (HTTPS) üzerinden deneyin.");
+    }
+    if (!rec) setupRec();
+    if (!rec) return;
+    var langMap = { "tr": "tr-TR", "ru": "ru-RU", "en": "en-US" };
+    rec.lang = langMap[state.lang] || "tr-TR";
+    if (document.getElementById("btnMic").classList.contains("recording")) {
+      rec.stop();
+    } else {
+      try { rec.start(); } catch (e) { rec.stop(); }
+    }
+  }
 
   renderI18n(); updateReligionsUI();
   if (localStorage.getItem("abide_premium") === "true") { state.premium = true; updatePremiumUI(); }
