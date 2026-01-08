@@ -651,23 +651,16 @@
   async function callHuggingFaceAI(userText, detectedTag) {
     if (!checkDailyLimit()) return null;
 
-    var apiKey = localStorage.getItem("abide_api_key");
-    if (!apiKey || apiKey.trim() === "") apiKey = EMBEDDED_KEY;
+    var apiKey = EMBEDDED_KEY.trim(); // Doğrudan gömülü anahtar
     if (!apiKey) {
       setResponse("Hata: Token bulunamadı.");
       return null;
     }
-    apiKey = apiKey.trim();
 
-    // API Tipi Belirleme (Google vs HuggingFace)
-    var isGoogle = apiKey.startsWith("AIza");
-    var apiUrl = isGoogle
-      ? "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-      : "https://router.huggingface.co/v1/chat/completions";
+    // API Tipi Belirleme (Sadece Google Gemini Native Kullanacağız)
+    var apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-    var modelName = isGoogle ? "gemini-1.5-flash" : "google/gemma-2-9b-it";
-
-    // ... Prompt ve Mesaj Hazırlığı ...
+    // Profil Hazırlığı
     var langName = state.lang === "tr" ? "Türkçe" : (state.lang === "ru" ? "Rusça" : "İngilizce");
     var genderName = state.gender === "male" ? "Erkek" : "Kadın";
     var rData = RELIGIONS[state.religion];
@@ -680,57 +673,55 @@
       KULLANICI PROFİLİ: Cinsiyet: ${genderName} (${hitap}), İnanç: ${fullFaith}, Dil: ${langName}.
       KURALLAR: 1. Yapay zeka gibi konuşma. 2. Cevaplar kısa olsun. 3. İnanca uygun terminoloji kullan. 4. Cevabı sadece ${langName} dilinde ver.`;
 
-    var messages = [
-      { role: "system", content: systemInstruction },
-      ...chatHistory,
-      { role: "user", content: userText }
-    ];
+    // Native Gemini Formatı
+    var body = {
+      contents: [
+        { role: "user", parts: [{ text: systemInstruction }] },
+        { role: "model", parts: [{ text: "Anlaşıldı. Selamun Aleyküm, sana nasıl yardımcı olabilirim?" }] },
+        ...chatHistory.map(m => ({
+          role: m.role === "assistant" ? "model" : "user",
+          parts: [{ text: m.content }]
+        })),
+        { role: "user", parts: [{ text: userText }] }
+      ],
+      generationConfig: {
+        maxOutputTokens: 500,
+        temperature: 0.7
+      }
+    };
 
     try {
-      setResponse("Abide düşünüyor... (Kişiselleştirilmiş)");
+      setResponse("Abide düşünüyor...");
       var response = await fetch(apiUrl, {
         method: "POST",
-        headers: {
-          "Authorization": "Bearer " + apiKey,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: modelName,
-          messages: messages,
-          max_tokens: 500,
-          temperature: 0.7
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
       });
 
       if (!response.ok) {
         var errText = await response.text();
-        throw new Error("HTTP " + response.status + ": " + errText);
+        throw new Error("API Hatası: " + errText);
       }
 
       var data = await response.json();
 
-      if (data && data.choices && data.choices.length > 0) {
-        // Başarılı cevap geldi, sayacı artır
+      if (data && data.candidates && data.candidates.length > 0) {
         incrementUsage();
-        var aiText = data.choices[0].message.content;
+        var aiText = data.candidates[0].content.parts[0].text;
 
         // HAFIZAYA KAYDET
-        chatHistory.push({ role: "user", content: userText }); // Kullanıcının dediğini hatırla
-        chatHistory.push({ role: "assistant", content: aiText }); // Kendi cevabını hatırla
-
-        // Hafıza çok şişmesin (Son 6 mesaj - 3 tur)
+        chatHistory.push({ role: "user", content: userText });
+        chatHistory.push({ role: "assistant", content: aiText });
         if (chatHistory.length > 6) chatHistory = chatHistory.slice(-6);
 
         return aiText;
-      } else if (data && data.error) {
-        throw new Error(data.error);
       } else {
         throw new Error("Boş cevap döndü.");
       }
 
     } catch (error) {
-      console.error("HF Hatası:", error);
-      return "⚠️ HATA: " + error.message;
+      console.error("Gemini Hatası:", error);
+      return "⚠️ Üzgünüm, şu an bağlantıda bir sorun oldu: " + error.message;
     }
   }
   // --- TTS (Seslendirme) İŞLEMLERİ ---
