@@ -105,7 +105,6 @@
     </div>
 
 
-
     <!-- PREMIUM ALANI -->
     <div style="border-top:1px solid #444; margin-top:12px; padding-top:12px; text-align:center;">
       <button onclick="buyPremium()" id="btnPremium"
@@ -199,7 +198,7 @@
 
 <script>
   // --- AYARLAR VE SABİTLER ---
-  const EMBEDDED_KEY = "AIzaSyDYaNiOgtuPX8erP-7lgngb2howl-pIwlk";
+  const EMBEDDED_KEY = "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";
 
   var state = {
     lang: "tr",
@@ -495,7 +494,6 @@
     return "tired";
   }
 
-  // --- YENİ: AI İŞLEMLERİ ---
   function loadApiKey() {
     // Premium kontrolü
     var isPrem = localStorage.getItem("abide_premium");
@@ -651,14 +649,16 @@
   async function callHuggingFaceAI(userText, detectedTag) {
     if (!checkDailyLimit()) return null;
 
-    var apiKey = EMBEDDED_KEY.trim(); // Doğrudan gömülü anahtar
-    if (!apiKey) {
-      setResponse("Hata: Token bulunamadı.");
+    var apiKey = EMBEDDED_KEY || localStorage.getItem("abide_api_key");
+    if (!apiKey || apiKey.trim() === "") {
+      setResponse("Üzgünüm, şu an bağlantıda bir sorun oldu. Lütfen tekrar deneyin.");
       return null;
     }
+    apiKey = apiKey.trim();
 
-    // API Tipi Belirleme (Sadece Google Gemini Native Kullanacağız)
-    var apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-3-flash:generateContent?key=${apiKey}`;
+    // Hugging Face Router API (v1)
+    var apiUrl = "https://router.huggingface.co/v1/chat/completions";
+    var modelName = "Qwen/Qwen2.5-7B-Instruct"; // Çok zeki ve özel izin gerektirmez
 
     // Profil Hazırlığı
     var langName = state.lang === "tr" ? "Türkçe" : (state.lang === "ru" ? "Rusça" : "İngilizce");
@@ -673,29 +673,26 @@
       KULLANICI PROFİLİ: Cinsiyet: ${genderName} (${hitap}), İnanç: ${fullFaith}, Dil: ${langName}.
       KURALLAR: 1. Yapay zeka gibi konuşma. 2. Cevaplar kısa olsun. 3. İnanca uygun terminoloji kullan. 4. Cevabı sadece ${langName} dilinde ver.`;
 
-    // Native Gemini Formatı
-    var body = {
-      contents: [
-        { role: "user", parts: [{ text: systemInstruction }] },
-        { role: "model", parts: [{ text: "Anlaşıldı. Selamun Aleyküm, sana nasıl yardımcı olabilirim?" }] },
-        ...chatHistory.map(m => ({
-          role: m.role === "assistant" ? "model" : "user",
-          parts: [{ text: m.content }]
-        })),
-        { role: "user", parts: [{ text: userText }] }
-      ],
-      generationConfig: {
-        maxOutputTokens: 500,
-        temperature: 0.7
-      }
-    };
+    var messages = [
+      { role: "system", content: systemInstruction },
+      ...chatHistory,
+      { role: "user", content: userText }
+    ];
 
     try {
       setResponse("Abide düşünüyor...");
       var response = await fetch(apiUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
+        headers: {
+          "Authorization": "Bearer " + apiKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages: messages,
+          max_tokens: 500,
+          temperature: 0.7
+        })
       });
 
       if (!response.ok) {
@@ -705,9 +702,9 @@
 
       var data = await response.json();
 
-      if (data && data.candidates && data.candidates.length > 0) {
+      if (data && data.choices && data.choices.length > 0) {
         incrementUsage();
-        var aiText = data.candidates[0].content.parts[0].text;
+        var aiText = data.choices[0].message.content;
 
         // HAFIZAYA KAYDET
         chatHistory.push({ role: "user", content: userText });
@@ -720,8 +717,8 @@
       }
 
     } catch (error) {
-      console.error("Gemini Hatası:", error);
-      return "⚠️ Üzgünüm, şu an bağlantıda bir sorun oldu: " + error.message;
+      console.error("AI Hatası:", error);
+      return "⚠️ HATA: " + error.message;
     }
   }
   // --- TTS (Seslendirme) İŞLEMLERİ ---
