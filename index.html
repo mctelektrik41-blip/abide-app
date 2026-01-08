@@ -73,7 +73,21 @@
 
 <div style="max-width:680px; margin:0 auto; padding:28px;">
   <div style="text-align: center; margin-bottom: 10px;">
-    <img src="logo.png" alt="SIRDAŞ Logo" class="logo" onerror="this.style.display='none'">
+    <!-- Profesyonel SVG Logo (Dosya gerektirmez, %100 her yerde çalışır) -->
+    <svg width="60" height="60" viewBox="0 0 100 100" class="logo">
+      <defs>
+        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <circle cx="50" cy="50" r="48" fill="#1a1a1a" stroke="url(#goldGrad)" stroke-width="2" />
+      <path d="M40,30 C60,20 80,40 70,60 C65,75 50,80 40,70" fill="none" stroke="url(#goldGrad)" stroke-width="4"
+        stroke-linecap="round" />
+      <circle cx="45" cy="50" r="8" fill="url(#goldGrad)" opacity="0.8" />
+      <circle cx="70" cy="25" r="2" fill="#fff" />
+      <circle cx="80" cy="50" r="1" fill="#fff" />
+    </svg>
   </div>
   <div style="display:flex; justify-content:space-between; align-items:center;">
     <h1 style="margin:0;">SIRDAŞ</h1>
